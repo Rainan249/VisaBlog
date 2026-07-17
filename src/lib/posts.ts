@@ -29,7 +29,11 @@ function getAllPostsRaw(): Post[] {
     posts.push({
       slug,
       title: data.title || slug,
-      date: data.date ? String(data.date) : "",
+      date: data.date
+        ? data.date instanceof Date
+          ? data.date.toISOString().split("T")[0]
+          : String(data.date)
+        : "",
       tags: data.tags || [],
       content,
     });

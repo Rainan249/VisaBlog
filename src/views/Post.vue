@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { useRoute } from "vue-router";
 import { getPostBySlug } from "../lib/posts";
 import { marked } from "marked";
+import { ElProgress } from "element-plus";
 
 const route = useRoute();
 const slug = route.params.slug as string;
@@ -89,7 +90,6 @@ function setupObserver() {
 
   observer = new IntersectionObserver(
     (entries) => {
-      // Track which headings are currently in the observation zone
       entries.forEach((entry) => {
         const id = (entry.target as HTMLElement).id;
         if (entry.isIntersecting) {
@@ -100,7 +100,6 @@ function setupObserver() {
       });
 
       if (visibleIds.size > 0) {
-        // Pick the top-most visible heading
         let topId = "";
         let topPos = Infinity;
         visibleIds.forEach((id) => {
@@ -156,6 +155,7 @@ function scrollToHeading(id: string) {
   if (el) {
     el.scrollIntoView({ block: "start" });
   }
+  closeMobileToc();
 }
 
 /** Collect heading IDs that have children and should be collapsed (h2+, not h1). */
@@ -163,14 +163,114 @@ function collectParentIds(items: TocItem[]): string[] {
   const ids: string[] = [];
   for (const item of items) {
     if (item.children.length > 0) {
-      if (item.level > 1) ids.push(item.id); // collapse h2/h3, keep h1 open
+      ids.push(item.id);
       ids.push(...collectParentIds(item.children));
     }
   }
   return ids;
 }
 
-// Initialise on mount
+/* ========================================
+   Optimization 1: Auto-expand parent when child is active
+   ======================================== */
+
+/** Find the parent ID of a given heading across the entire TOC tree. */
+function findParentId(id: string): string | null {
+  for (const item of tocItems.value) {
+    for (const child of item.children) {
+      if (child.id === id) return item.id;
+      for (const gc of child.children) {
+        if (gc.id === id) return child.id;
+      }
+    }
+  }
+  return null;
+}
+
+// Auto-expand parent when a child heading becomes active
+watch(activeId, (id) => {
+  if (!id) return;
+  const parentId = findParentId(id);
+  if (parentId && isCollapsed(parentId)) {
+    const next = new Set(collapsedGroups.value);
+    next.delete(parentId);
+    collapsedGroups.value = next;
+  }
+});
+
+/* ========================================
+   Optimization 3: Expand / Collapse all
+   ======================================== */
+
+function hasAnyCollapsed(items: TocItem[]): boolean {
+  for (const item of items) {
+    if (item.children.length > 0 && isCollapsed(item.id)) return true;
+    if (hasAnyCollapsed(item.children)) return true;
+  }
+  return false;
+}
+
+const allExpanded = computed(() => !hasAnyCollapsed(tocItems.value));
+
+function expandAll() {
+  collapsedGroups.value = new Set();
+}
+
+function collapseAll() {
+  collapsedGroups.value = new Set(collectParentIds(tocItems.value));
+}
+
+/* ========================================
+   Optimization 4: Copy chapter link — REMOVED
+   ======================================== */
+
+/* ========================================
+   Optimization 5: Mobile floating TOC
+   ======================================== */
+
+const mobileTocOpen = ref(false);
+
+function openMobileToc() {
+  mobileTocOpen.value = true;
+}
+
+function closeMobileToc() {
+  mobileTocOpen.value = false;
+}
+
+/* ========================================
+   Optimization 6: Reading progress
+   ======================================== */
+
+const tocProgress = computed(() => {
+  const allIds: string[] = [];
+  function walk(items: TocItem[]) {
+    for (const item of items) {
+      allIds.push(item.id);
+      for (const child of item.children) {
+        if (child.level <= 2) {
+          walk([child]);
+        } else {
+          allIds.push(child.id);
+        }
+      }
+    }
+  }
+  walk(tocItems.value);
+
+  const total = allIds.length;
+  const idx = allIds.indexOf(activeId.value);
+  const current = idx >= 0 ? idx + 1 : 0;
+  const percent = total > 0 ? Math.round((current / total) * 100) : 0;
+
+  return { current, total, percent };
+});
+
+/* ========================================
+   Lifecycle
+   ======================================== */
+
+// Initialise on mount — default collapsed so the left rail stays compact on pageload
 onMounted(async () => {
   await nextTick();
   tocItems.value = buildToc();
@@ -194,7 +294,7 @@ onUnmounted(() => {
   observer?.disconnect();
 });
 
-// Auto-scroll sidebar to center the active item (without forcing reflow)
+// Auto-scroll sidebar to center the active item
 watch(activeId, (id) => {
   if (!id || !tocRef.value) return;
   const link = tocRef.value.querySelector(`[href="#${id}"]`) as HTMLElement | null;
@@ -204,9 +304,9 @@ watch(activeId, (id) => {
   const linkRect = link.getBoundingClientRect();
   const containerRect = container.getBoundingClientRect();
 
-  // Only scroll if link is outside the visible area
   if (linkRect.top < containerRect.top || linkRect.bottom > containerRect.bottom) {
-    container.scrollTop += linkRect.top - containerRect.top - containerRect.height / 2 + linkRect.height / 2;
+    container.scrollTop +=
+      linkRect.top - containerRect.top - containerRect.height / 2 + linkRect.height / 2;
   }
 });
 </script>
@@ -218,102 +318,149 @@ watch(activeId, (id) => {
     :class="{ 'has-toc': tocItems.length > 0 }"
     v-if="post"
   >
-    <!-- Sidebar Table of Contents (left side) -->
+    <!-- Desktop Sidebar Table of Contents (left side) -->
     <aside ref="tocRef" class="toc-sidebar" v-if="tocItems.length > 0">
-      <div class="toc-title">目录</div>
+      <!-- Title row with progress & expand/collapse -->
+      <div class="toc-header">
+        <div class="toc-header-top">
+          <span class="toc-title">目录</span>
+          <span class="toc-counter">{{ tocProgress.current }} / {{ tocProgress.total }}</span>
+          <div class="toc-toggle-all">
+            <button
+              class="toc-action-btn"
+              :class="{ active: allExpanded }"
+              @click="expandAll"
+              title="全部展开"
+              aria-label="全部展开"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14">
+                <path d="M2 4L7 9L12 4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <button
+              class="toc-action-btn"
+              :class="{ active: !allExpanded }"
+              @click="collapseAll"
+              title="全部收起"
+              aria-label="全部收起"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14">
+                <path d="M2 9L7 4L12 9" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <!-- Thin progress bar -->
+        <div class="toc-progress-bar">
+          <ElProgress
+            :percentage="tocProgress.percent"
+            :stroke-width="2"
+            :show-text="false"
+            color="#1a73e8"
+          />
+        </div>
+      </div>
 
       <nav>
         <ul class="toc-list">
-          <li v-for="item in tocItems" :key="item.id" :class="['toc-group', 'toc-group--h' + item.level]">
-            <!-- Heading row -->
-            <div class="toc-row">
-              <button
+          <template v-for="item in tocItems" :key="item.id">
+            <li :class="['toc-group', 'toc-group--h' + item.level]">
+              <!-- Heading row -->
+              <div class="toc-row">
+                <button
+                  v-if="item.children.length > 0"
+                  class="toc-chevron"
+                  :class="{ collapsed: isCollapsed(item.id) }"
+                  @click="toggleGroup(item.id)"
+                  :aria-label="isCollapsed(item.id) ? '展开' : '收起'"
+                >
+                  <svg width="10" height="10" viewBox="0 0 10 10">
+                    <path d="M3 2L7 5L3 8" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </button>
+                <span v-else class="toc-chevron toc-chevron--ghost"></span>
+
+                <a
+                  :class="['toc-link', 'toc-link--h' + item.level, { active: activeId === item.id }]"
+                  @click.prevent="scrollToHeading(item.id)"
+                  :href="'#' + item.id"
+                >
+                  {{ item.text }}
+                </a>
+              </div>
+
+              <!-- Children (grid-animated) -->
+              <div
                 v-if="item.children.length > 0"
-                class="toc-chevron"
+                class="toc-children"
                 :class="{ collapsed: isCollapsed(item.id) }"
-                @click="toggleGroup(item.id)"
-                :aria-label="isCollapsed(item.id) ? '展开' : '收起'"
               >
-                <svg width="10" height="10" viewBox="0 0 10 10">
-                  <path
-                    d="M3 2L7 5L3 8"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    fill="none"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </button>
-              <span v-else class="toc-chevron toc-chevron--ghost"></span>
+                <div class="toc-children-inner">
+                  <ul class="toc-children-list">
+                    <template v-for="child in item.children" :key="child.id">
+                      <!-- h3 leaf item -->
+                      <li v-if="child.level === 3" class="toc-child-item">
+                        <a
+                          class="toc-link toc-link--h3"
+                          :class="{ active: activeId === child.id }"
+                          @click.prevent="scrollToHeading(child.id)"
+                          :href="'#' + child.id"
+                        >
+                          {{ child.text }}
+                        </a>
+                      </li>
 
-              <a
-                :class="['toc-link', 'toc-link--h' + item.level, { active: activeId === item.id }]"
-                @click.prevent="scrollToHeading(item.id)"
-                :href="'#' + item.id"
-              >
-                {{ item.text }}
-              </a>
-            </div>
-
-            <!-- Children (recursive: h2 under h1, h3 under h2) -->
-            <ul
-              v-if="item.children.length > 0"
-              class="toc-children"
-              :class="{ collapsed: isCollapsed(item.id) }"
-            >
-              <template v-for="child in item.children" :key="child.id">
-                <!-- h3 rendered as child item -->
-                <li v-if="child.level === 3" class="toc-child-item">
-                  <a
-                    class="toc-link toc-link--h3"
-                    :class="{ active: activeId === child.id }"
-                    @click.prevent="scrollToHeading(child.id)"
-                    :href="'#' + child.id"
-                  >
-                    {{ child.text }}
-                  </a>
-                </li>
-                <!-- h2 rendered as nested group -->
-                <li v-else :class="['toc-group', 'toc-group--h' + child.level]">
-                  <div class="toc-row">
-                    <button
-                      v-if="child.children.length > 0"
-                      class="toc-chevron"
-                      :class="{ collapsed: isCollapsed(child.id) }"
-                      @click="toggleGroup(child.id)"
-                      :aria-label="isCollapsed(child.id) ? '展开' : '收起'"
-                    >
-                      <svg width="10" height="10" viewBox="0 0 10 10">
-                        <path d="M3 2L7 5L3 8" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-                      </svg>
-                    </button>
-                    <span v-else class="toc-chevron toc-chevron--ghost"></span>
-                    <a
-                      :class="['toc-link', 'toc-link--h' + child.level, { active: activeId === child.id }]"
-                      @click.prevent="scrollToHeading(child.id)"
-                      :href="'#' + child.id"
-                    >
-                      {{ child.text }}
-                    </a>
-                  </div>
-                  <!-- h3 children under h2 -->
-                  <ul v-if="child.children.length > 0" class="toc-children" :class="{ collapsed: isCollapsed(child.id) }">
-                    <li v-for="grandchild in child.children" :key="grandchild.id" class="toc-child-item">
-                      <a
-                        class="toc-link toc-link--h3"
-                        :class="{ active: activeId === grandchild.id }"
-                        @click.prevent="scrollToHeading(grandchild.id)"
-                        :href="'#' + grandchild.id"
-                      >
-                        {{ grandchild.text }}
-                      </a>
-                    </li>
+                      <!-- Nested h2 group -->
+                      <li v-else :class="['toc-group', 'toc-group--h' + child.level]">
+                        <div class="toc-row">
+                          <button
+                            v-if="child.children.length > 0"
+                            class="toc-chevron"
+                            :class="{ collapsed: isCollapsed(child.id) }"
+                            @click="toggleGroup(child.id)"
+                            :aria-label="isCollapsed(child.id) ? '展开' : '收起'"
+                          >
+                            <svg width="10" height="10" viewBox="0 0 10 10">
+                              <path d="M3 2L7 5L3 8" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                          </button>
+                          <span v-else class="toc-chevron toc-chevron--ghost"></span>
+                          <a
+                            :class="['toc-link', 'toc-link--h' + child.level, { active: activeId === child.id }]"
+                            @click.prevent="scrollToHeading(child.id)"
+                            :href="'#' + child.id"
+                          >
+                            {{ child.text }}
+                          </a>
+                        </div>
+                        <!-- Grandchildren h3 -->
+                        <div
+                          v-if="child.children.length > 0"
+                          class="toc-children"
+                          :class="{ collapsed: isCollapsed(child.id) }"
+                        >
+                          <div class="toc-children-inner">
+                            <ul class="toc-children-list">
+                              <li v-for="gc in child.children" :key="gc.id" class="toc-child-item">
+                                <a
+                                  class="toc-link toc-link--h3"
+                                  :class="{ active: activeId === gc.id }"
+                                  @click.prevent="scrollToHeading(gc.id)"
+                                  :href="'#' + gc.id"
+                                >
+                                  {{ gc.text }}
+                                </a>
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </li>
+                    </template>
                   </ul>
-                </li>
-              </template>
-            </ul>
-          </li>
+                </div>
+              </div>
+            </li>
+          </template>
         </ul>
       </nav>
     </aside>
@@ -329,6 +476,150 @@ watch(activeId, (id) => {
       </header>
       <div ref="contentRef" class="post-content" v-html="html"></div>
     </article>
+
+    <!-- Mobile floating TOC button -->
+    <button
+      class="toc-mobile-fab"
+      @click="openMobileToc"
+      aria-label="打开目录"
+      title="目录"
+    >
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <rect x="2" y="3" width="16" height="2" rx="1" fill="currentColor" />
+        <rect x="2" y="9" width="12" height="2" rx="1" fill="currentColor" />
+        <rect x="2" y="15" width="14" height="2" rx="1" fill="currentColor" />
+      </svg>
+    </button>
+
+    <!-- Mobile TOC overlay -->
+    <Teleport to="body">
+      <Transition name="toc-slide">
+        <div v-if="mobileTocOpen" class="toc-mobile-overlay">
+          <div class="toc-mobile-backdrop" @click="closeMobileToc"></div>
+          <aside class="toc-mobile-panel">
+            <div class="toc-mobile-header">
+              <span class="toc-mobile-title">目录</span>
+              <span class="toc-counter toc-counter--mobile">{{ tocProgress.current }} / {{ tocProgress.total }}</span>
+              <button class="toc-mobile-close" @click="closeMobileToc" aria-label="关闭">
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                  <path d="M4 4L14 14M14 4L4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="toc-progress-bar toc-progress-bar--mobile">
+              <ElProgress
+                :percentage="tocProgress.percent"
+                :stroke-width="2"
+                :show-text="false"
+                color="#1a73e8"
+              />
+            </div>
+
+            <div class="toc-mobile-actions">
+              <button class="toc-action-btn toc-action-btn--mobile" @click="expandAll">全部展开</button>
+              <button class="toc-action-btn toc-action-btn--mobile" @click="collapseAll">全部收起</button>
+            </div>
+
+            <nav>
+              <ul class="toc-list">
+                <template v-for="item in tocItems" :key="item.id">
+                  <li :class="['toc-group', 'toc-group--h' + item.level]">
+                    <div class="toc-row">
+                      <button
+                        v-if="item.children.length > 0"
+                        class="toc-chevron"
+                        :class="{ collapsed: isCollapsed(item.id) }"
+                        @click="toggleGroup(item.id)"
+                        :aria-label="isCollapsed(item.id) ? '展开' : '收起'"
+                      >
+                        <svg width="10" height="10" viewBox="0 0 10 10">
+                          <path d="M3 2L7 5L3 8" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                      </button>
+                      <span v-else class="toc-chevron toc-chevron--ghost"></span>
+                      <a
+                        :class="['toc-link', 'toc-link--h' + item.level, { active: activeId === item.id }]"
+                        @click.prevent="scrollToHeading(item.id)"
+                        :href="'#' + item.id"
+                      >
+                        {{ item.text }}
+                      </a>
+                    </div>
+                    <div
+                      v-if="item.children.length > 0"
+                      class="toc-children"
+                      :class="{ collapsed: isCollapsed(item.id) }"
+                    >
+                      <div class="toc-children-inner">
+                        <ul class="toc-children-list">
+                          <template v-for="child in item.children" :key="child.id">
+                            <li v-if="child.level === 3" class="toc-child-item">
+                              <a
+                                class="toc-link toc-link--h3"
+                                :class="{ active: activeId === child.id }"
+                                @click.prevent="scrollToHeading(child.id)"
+                                :href="'#' + child.id"
+                              >
+                                {{ child.text }}
+                              </a>
+                            </li>
+                            <li v-else :class="['toc-group', 'toc-group--h' + child.level]">
+                              <div class="toc-row">
+                                <button
+                                  v-if="child.children.length > 0"
+                                  class="toc-chevron"
+                                  :class="{ collapsed: isCollapsed(child.id) }"
+                                  @click="toggleGroup(child.id)"
+                                  :aria-label="isCollapsed(child.id) ? '展开' : '收起'"
+                                >
+                                  <svg width="10" height="10" viewBox="0 0 10 10">
+                                    <path d="M3 2L7 5L3 8" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                                  </svg>
+                                </button>
+                                <span v-else class="toc-chevron toc-chevron--ghost"></span>
+                                <a
+                                  :class="['toc-link', 'toc-link--h' + child.level, { active: activeId === child.id }]"
+                                  @click.prevent="scrollToHeading(child.id)"
+                                  :href="'#' + child.id"
+                                >
+                                  {{ child.text }}
+                                </a>
+                              </div>
+                              <div
+                                v-if="child.children.length > 0"
+                                class="toc-children"
+                                :class="{ collapsed: isCollapsed(child.id) }"
+                              >
+                                <div class="toc-children-inner">
+                                  <ul class="toc-children-list">
+                                    <li v-for="gc in child.children" :key="gc.id" class="toc-child-item">
+                                      <a
+                                        class="toc-link toc-link--h3"
+                                        :class="{ active: activeId === gc.id }"
+                                        @click.prevent="scrollToHeading(gc.id)"
+                                        :href="'#' + gc.id"
+                                      >
+                                        {{ gc.text }}
+                                      </a>
+                                    </li>
+                                  </ul>
+                                </div>
+                              </div>
+                            </li>
+                          </template>
+                        </ul>
+                      </div>
+                    </div>
+                  </li>
+                </template>
+              </ul>
+            </nav>
+          </aside>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 
   <!-- Not Found -->
@@ -349,7 +640,6 @@ watch(activeId, (id) => {
   padding: 48px 24px;
 }
 
-/* Wider flex layout when TOC is present */
 .post-page.has-toc {
   max-width: none;
   display: flex;
@@ -365,7 +655,7 @@ watch(activeId, (id) => {
 }
 
 /* ========================================
-   Post Header & Content (unchanged)
+   Post Header & Content
    ======================================== */
 
 .post-header {
@@ -400,7 +690,6 @@ watch(activeId, (id) => {
   font-size: 1.05rem;
 }
 
-/* Inject IDs into heading scroll target so IntersectionObserver can track them */
 .post-content :deep(h1),
 .post-content :deep(h2),
 .post-content :deep(h3) {
@@ -411,7 +700,7 @@ watch(activeId, (id) => {
   font-size: 1.8rem;
   margin: 40px 0 20px;
   padding-bottom: 10px;
-  border-bottom: 2px solid rgba(124,58,237,0.2);
+  border-bottom: 2px solid rgba(124, 58, 237, 0.2);
   color: #7c3aed;
 }
 
@@ -419,7 +708,7 @@ watch(activeId, (id) => {
   font-size: 1.4rem;
   margin: 32px 0 16px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(26,115,232,0.2);
+  border-bottom: 1px solid rgba(26, 115, 232, 0.2);
   color: #1a73e8;
 }
 
@@ -483,32 +772,105 @@ watch(activeId, (id) => {
 }
 
 /* ========================================
-   Table of Contents Sidebar
+   Desktop Sidebar – Table of Contents
    ======================================== */
 
 .toc-sidebar {
   position: fixed;
-  left: 24px;
-  top: 100px;
-  width: 200px;
+  left: 32px;
+  top: 40px;
+  width: 230px;
   flex-shrink: 0;
   font-size: 0.85rem;
-
-  /* Scroll internally if TOC is very long */
-  max-height: calc(100vh - 140px);
-  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding-right: 4px;
+  max-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
 }
 
-/* ---------- Title ---------- */
+.toc-sidebar nav {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+/* ---------- Header (title + counter + actions) ---------- */
+
+.toc-header {
+  margin-bottom: 10px;
+}
+
+.toc-header-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
 
 .toc-title {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: #aaa;
-  margin-bottom: 14px;
   font-weight: 600;
   text-align: center;
+  flex-shrink: 0;
+}
+
+.toc-counter {
+  font-size: 0.68rem;
+  color: #bbb;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.toc-toggle-all {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+
+.toc-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #fff;
+  color: #aaa;
+  padding: 0;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.toc-action-btn:hover {
+  color: #1a73e8;
+  border-color: #1a73e8;
+  background: rgba(26, 115, 232, 0.04);
+}
+
+.toc-action-btn.active {
+  color: #1a73e8;
+  border-color: #1a73e8;
+  background: rgba(26, 115, 232, 0.06);
+}
+
+/* ---------- Progress bar ---------- */
+
+.toc-progress-bar {
+  margin-bottom: 10px;
+}
+
+.toc-progress-bar :deep(.el-progress-bar__outer) {
+  background: #eee;
+  border-radius: 1px;
+}
+
+.toc-progress-bar :deep(.el-progress-bar__inner) {
+  border-radius: 1px;
 }
 
 /* ---------- List ---------- */
@@ -519,14 +881,13 @@ watch(activeId, (id) => {
   margin: 0;
 }
 
-/* ---------- Group (heading + children) ---------- */
+/* ---------- Group ---------- */
 
 .toc-group {
   position: relative;
-  margin-bottom: 2px;
+  margin-bottom: 10px;
 }
 
-/* Indentation per heading level */
 .toc-group--h1 { padding-left: 8px; }
 .toc-group--h2 { padding-left: 24px; }
 
@@ -543,15 +904,9 @@ watch(activeId, (id) => {
   border-radius: 1px;
 }
 
-/* Line color per heading level */
-.toc-group--h1::before {
-  background: #7c3aed;
-}
-.toc-group--h2::before {
-  background: #1a73e8;
-}
+.toc-group--h1::before { background: #7c3aed; }
+.toc-group--h2::before { background: #1a73e8; }
 
-/* Highlight line when heading or any child h3 is active */
 .toc-group--h1:has(.toc-link--h1.active)::before,
 .toc-group--h2:has(.toc-link--h2.active)::before,
 .toc-group--h1:has(.toc-link--h3.active)::before,
@@ -559,7 +914,7 @@ watch(activeId, (id) => {
   opacity: 1;
 }
 
-/* ---------- h2 row ---------- */
+/* ---------- Row ---------- */
 
 .toc-row {
   display: flex;
@@ -568,7 +923,7 @@ watch(activeId, (id) => {
   position: relative;
 }
 
-/* Connector from vertical line to heading text - per level */
+/* Connector from vertical line to heading text */
 .toc-group--h1 .toc-row::before {
   content: "";
   position: absolute;
@@ -595,15 +950,10 @@ watch(activeId, (id) => {
   transform: translateY(-50%);
 }
 
-/* Connector highlight when active */
 .toc-group--h1:has(.toc-link--h1.active) > .toc-row::before,
-.toc-group--h1:has(.toc-link--h3.active) > .toc-row::before {
-  opacity: 1;
-}
+.toc-group--h1:has(.toc-link--h3.active) > .toc-row::before { opacity: 1; }
 .toc-group--h2:has(.toc-link--h2.active) > .toc-row::before,
-.toc-group--h2:has(.toc-link--h3.active) > .toc-row::before {
-  opacity: 1;
-}
+.toc-group--h2:has(.toc-link--h3.active) > .toc-row::before { opacity: 1; }
 
 /* ---------- Chevron ---------- */
 
@@ -622,19 +972,11 @@ watch(activeId, (id) => {
   transition: transform 0.25s ease, color 0.15s;
 }
 
-.toc-chevron:hover {
-  color: #1a73e8;
-}
+.toc-chevron:hover { color: #1a73e8; }
+.toc-chevron.collapsed { transform: rotate(-90deg); }
+.toc-chevron--ghost { visibility: hidden; }
 
-.toc-chevron.collapsed {
-  transform: rotate(-90deg);
-}
-
-.toc-chevron--ghost {
-  visibility: hidden;
-}
-
-/* ---------- h2 Link ---------- */
+/* ---------- Links ---------- */
 
 .toc-link--h2 {
   display: block;
@@ -648,17 +990,8 @@ watch(activeId, (id) => {
   transition: color 0.15s, background 0.15s;
 }
 
-.toc-link--h2:hover {
-  color: #1557b0;
-  background: rgba(26,115,232,0.05);
-}
-
-.toc-link--h2.active {
-  color: #1a73e8;
-  font-weight: 600;
-}
-
-/* ---------- h1 Link ---------- */
+.toc-link--h2:hover { color: #1557b0; background: rgba(26, 115, 232, 0.05); }
+.toc-link--h2.active { color: #1a73e8; font-weight: 600; }
 
 .toc-link--h1 {
   display: block;
@@ -672,31 +1005,32 @@ watch(activeId, (id) => {
   transition: color 0.15s, background 0.15s;
 }
 
-.toc-link--h1:hover {
-  color: #6d28d9;
-  background: rgba(124,58,237,0.05);
-}
+.toc-link--h1:hover { color: #6d28d9; background: rgba(124, 58, 237, 0.05); }
+.toc-link--h1.active { color: #6d28d9; font-weight: 700; }
 
-.toc-link--h1.active {
-  color: #6d28d9;
-  font-weight: 700;
-}
-
-/* ---------- h3 children container ---------- */
+/* ---------- Grid-animated children container ---------- */
 
 .toc-children {
-  list-style: none;
-  padding: 0 0 0 8px;
-  margin: 0;
   overflow: hidden;
   max-height: 600px;
   opacity: 1;
-  transition: max-height 0.35s ease, opacity 0.2s ease;
+  transition: max-height 0.3s ease, opacity 0.2s ease;
 }
 
 .toc-children.collapsed {
   max-height: 0;
   opacity: 0;
+}
+
+.toc-children-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.toc-children-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 /* ---------- h3 child item ---------- */
@@ -707,7 +1041,6 @@ watch(activeId, (id) => {
   margin-bottom: 1px;
 }
 
-/* Connector from vertical line to h3 text */
 .toc-child-item::before {
   content: "";
   position: absolute;
@@ -721,7 +1054,6 @@ watch(activeId, (id) => {
   transform: translateY(-50%);
 }
 
-/* Highlight connector when h3 active */
 .toc-child-item:has(.toc-link--h3.active)::before {
   opacity: 1;
   background: #0d9488;
@@ -738,14 +1070,150 @@ watch(activeId, (id) => {
   transition: color 0.15s, background 0.15s;
 }
 
-.toc-link--h3:hover {
-  color: #0f766e;
-  background: rgba(13,148,136,0.05);
+.toc-link--h3:hover { color: #0f766e; background: rgba(13, 148, 136, 0.05); }
+.toc-link--h3.active { color: #0d9488; font-weight: 500; }
+
+/* ========================================
+   Mobile FAB button
+   ======================================== */
+
+.toc-mobile-fab {
+  display: none;
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #1a73e8;
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 16px rgba(26, 115, 232, 0.35);
+  z-index: 998;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.toc-link--h3.active {
-  color: #0d9488;
+.toc-mobile-fab:active {
+  transform: scale(0.94);
+  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.25);
+}
+
+/* ========================================
+   Mobile TOC overlay
+   ======================================== */
+
+.toc-mobile-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+
+.toc-mobile-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.toc-mobile-panel {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 280px;
+  max-width: 85vw;
+  background: #fff;
+  padding: 20px 24px;
+  overflow-y: auto;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+}
+
+.toc-mobile-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.toc-mobile-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.toc-counter--mobile {
+  font-size: 0.72rem;
+  color: #aaa;
+}
+
+.toc-mobile-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #999;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.toc-mobile-close:hover {
+  color: #333;
+  background: #f0f0f0;
+}
+
+.toc-progress-bar--mobile {
+  margin-bottom: 12px;
+}
+
+.toc-mobile-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.toc-action-btn--mobile {
+  width: auto;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 0.75rem;
   font-weight: 500;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  color: #666;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.toc-action-btn--mobile:hover {
+  color: #1a73e8;
+  border-color: #1a73e8;
+  background: rgba(26, 115, 232, 0.04);
+}
+
+/* Slide-in transition */
+.toc-slide-enter-active,
+.toc-slide-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.toc-slide-enter-active .toc-mobile-panel,
+.toc-slide-leave-active .toc-mobile-panel {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toc-slide-enter-from,
+.toc-slide-leave-to {
+  opacity: 0;
+}
+
+.toc-slide-enter-from .toc-mobile-panel,
+.toc-slide-leave-to .toc-mobile-panel {
+  transform: translateX(100%);
 }
 
 /* ========================================
@@ -763,7 +1231,7 @@ watch(activeId, (id) => {
 }
 
 /* ========================================
-   Responsive: hide sidebar on narrow screens
+   Responsive
    ======================================== */
 
 @media (max-width: 900px) {
@@ -774,6 +1242,10 @@ watch(activeId, (id) => {
 
   .toc-sidebar {
     display: none;
+  }
+
+  .toc-mobile-fab {
+    display: flex;
   }
 }
 </style>

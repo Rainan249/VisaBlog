@@ -98,9 +98,41 @@ img {
   color: #e0e0e0 !important;
 }
 
+:root.dark .post-card h2:hover {
+  color: #4a9eff !important;
+}
+
+:root.dark .post-meta {
+  color: #999 !important;
+}
+
 :root.dark .tag {
   background: #2a2a3e !important;
   color: #b0b8c8 !important;
+}
+
+:root.dark .tag-bar {
+  border-bottom-color: #2a2a3e !important;
+}
+
+:root.dark .tag-btn {
+  border-color: #3a3a5e !important;
+  color: #b0b8c8 !important;
+}
+
+:root.dark .tag-btn:hover {
+  border-color: #4a9eff !important;
+  color: #4a9eff !important;
+}
+
+:root.dark .tag-btn.active {
+  background: #4a9eff !important;
+  border-color: #4a9eff !important;
+  color: #fff !important;
+}
+
+:root.dark .empty {
+  color: #666 !important;
 }
 
 :root.dark .post-page article h1 {

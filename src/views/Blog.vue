@@ -1,9 +1,26 @@
 <script setup lang="ts">
+import { ref, computed } from "vue";
 import { getAllPosts } from "../lib/posts";
 import type { PostMeta } from "../lib/posts";
 import CursorTrail from "../components/CursorTrail.vue";
 
-const posts = getAllPosts() as PostMeta[];
+const allPosts = getAllPosts() as PostMeta[];
+const activeTag = ref("");
+
+const tags = computed(() => {
+  const set = new Set<string>();
+  allPosts.forEach((p) => p.tags.forEach((t) => set.add(t)));
+  return Array.from(set).sort();
+});
+
+const filteredPosts = computed(() => {
+  if (!activeTag.value) return allPosts;
+  return allPosts.filter((p) => p.tags.includes(activeTag.value));
+});
+
+function selectTag(tag: string) {
+  activeTag.value = activeTag.value === tag ? "" : tag;
+}
 </script>
 
 <template>
@@ -14,8 +31,24 @@ const posts = getAllPosts() as PostMeta[];
       <p>用 Markdown 写文章，用 Vue 3 搭博客</p>
     </header>
 
+    <!-- 标签筛选 -->
+    <div class="tag-bar" v-if="tags.length > 0">
+      <button
+        class="tag-btn"
+        :class="{ active: activeTag === '' }"
+        @click="activeTag = ''"
+      >全部</button>
+      <button
+        v-for="tag in tags"
+        :key="tag"
+        class="tag-btn"
+        :class="{ active: activeTag === tag }"
+        @click="selectTag(tag)"
+      >{{ tag }}</button>
+    </div>
+
     <div class="post-list">
-      <article v-for="post in posts" :key="post.slug" class="post-card">
+      <article v-for="post in filteredPosts" :key="post.slug" class="post-card">
         <a :href="`/blog/${post.slug}`" target="_blank" class="post-link">
           <h2>{{ post.title }}</h2>
           <div class="post-meta">
@@ -24,6 +57,8 @@ const posts = getAllPosts() as PostMeta[];
           </div>
         </a>
       </article>
+
+      <p v-if="filteredPosts.length === 0" class="empty">没有找到相关文章</p>
     </div>
   </div>
 </template>
@@ -36,7 +71,7 @@ const posts = getAllPosts() as PostMeta[];
 }
 
 .blog-header {
-  margin-bottom: 48px;
+  margin-bottom: 32px;
 }
 
 .blog-header h1 {
@@ -49,6 +84,41 @@ const posts = getAllPosts() as PostMeta[];
   color: #666;
   margin: 0;
 }
+
+/* ===== 标签栏 ===== */
+
+.tag-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.tag-btn {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid #e0e0e0;
+  background: transparent;
+  color: #666;
+  font-size: 0.85rem;
+  cursor: none;
+  transition: all 0.2s;
+}
+
+.tag-btn:hover {
+  border-color: #1a73e8;
+  color: #1a73e8;
+}
+
+.tag-btn.active {
+  background: #1a73e8;
+  border-color: #1a73e8;
+  color: #fff;
+}
+
+/* ===== 文章列表 ===== */
 
 .post-list {
   display: flex;
@@ -92,5 +162,11 @@ const posts = getAllPosts() as PostMeta[];
   border-radius: 12px;
   font-size: 0.8rem;
   color: #555;
+}
+
+.empty {
+  text-align: center;
+  color: #999;
+  padding: 40px 0;
 }
 </style>
