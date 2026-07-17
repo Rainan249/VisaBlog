@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref } from "vue";
 import { useRoute } from "vue-router";
 import { Sunny, Moon } from "@element-plus/icons-vue";
+import { useTheme } from "../lib/useTheme";
 
 const route = useRoute();
-const isDark = ref(false);
+const { isDark, toggle } = useTheme();
 const links = [
   { path: "/", label: "首页" },
   { path: "/blog", label: "博客" },
@@ -12,7 +12,7 @@ const links = [
 ];
 
 function toggleTheme() {
-  isDark.value = !isDark.value;
+  toggle();
 }
 </script>
 

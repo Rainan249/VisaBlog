@@ -5,14 +5,41 @@
   cursor: none !important;
 }
 
+:root {
+  --bg: #fff;
+  --bg-secondary: #fafbfd;
+  --text: #333;
+  --text-secondary: #666;
+  --border: #eee;
+  --card-bg: #fff;
+  --code-bg: #f4f4f4;
+  --blockquote-bg: #f8f9fa;
+  --blockquote-border: #1a73e8;
+  color-scheme: light;
+}
+
+:root.dark {
+  --bg: #12121a;
+  --bg-secondary: #1a1a2e;
+  --text: #e0e0e0;
+  --text-secondary: #999;
+  --border: #2a2a3e;
+  --card-bg: #1a1a2e;
+  --code-bg: #2a2a3e;
+  --blockquote-bg: #1a1a2e;
+  --blockquote-border: #4a9eff;
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Noto Sans SC", sans-serif;
-  color: #333;
-  background: #fff;
+  color: var(--text);
+  background: var(--bg);
   -webkit-font-smoothing: antialiased;
   line-height: 1.6;
+  transition: background 0.3s, color 0.3s;
 }
 
 a {
@@ -27,4 +54,100 @@ a:hover {
 img {
   max-width: 100%;
   height: auto;
+}
+
+/* ========== Global dark mode overrides ========== */
+
+:root.dark .navbar {
+  background: #1a1a2e !important;
+  border-color: #2a2a3e !important;
+}
+
+:root.dark .navbar a {
+  color: #b0b8c8 !important;
+}
+:root.dark .navbar a:hover,
+:root.dark .navbar a.active {
+  color: #4a9eff !important;
+}
+
+:root.dark .blog,
+:root.dark .about {
+  background: transparent !important;
+}
+
+:root.dark .blog h1,
+:root.dark .blog h2,
+:root.dark .about h1,
+:root.dark .about h2 {
+  color: #e0e0e0 !important;
+}
+
+:root.dark .blog p,
+:root.dark .about p,
+:root.dark .blog time,
+:root.dark .about .content {
+  color: #b0b8c8 !important;
+}
+
+:root.dark .post-card {
+  border-color: #2a2a3e !important;
+}
+
+:root.dark .post-card h2 {
+  color: #e0e0e0 !important;
+}
+
+:root.dark .tag {
+  background: #2a2a3e !important;
+  color: #b0b8c8 !important;
+}
+
+:root.dark .post-page article h1 {
+  color: #e0e0e0 !important;
+}
+
+:root.dark .post-content h2 {
+  color: #4a9eff !important;
+  border-bottom-color: rgba(74,158,255,0.15) !important;
+}
+
+:root.dark .post-content h3 {
+  color: #34d399 !important;
+}
+
+:root.dark .post-content p,
+:root.dark .post-content li {
+  color: #c0c8d0 !important;
+}
+
+:root.dark .post-content code {
+  background: #2a2a3e !important;
+  color: #e0e0e0 !important;
+}
+
+:root.dark .post-content pre {
+  background: #0d0d14 !important;
+}
+
+:root.dark .post-content blockquote {
+  background: #1a1a2e !important;
+  border-left-color: #4a9eff !important;
+  color: #b0b8c8 !important;
+}
+
+:root.dark .toc-sidebar .toc-link--h2 {
+  color: #4a9eff !important;
+}
+
+:root.dark .toc-sidebar .toc-link--h3 {
+  color: #34d399 !important;
+}
+
+:root.dark .toc-group::before {
+  opacity: 0.6 !important;
+}
+
+:root.dark .not-found h1 {
+  color: #e0e0e0 !important;
 }

@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
+import { useTheme } from "../lib/useTheme";
 
 const RADIUS = 147;
 
 const homeRef = ref<HTMLElement | null>(null);
 const heroRef = ref<HTMLElement | null>(null);
 const revealRef = ref<HTMLElement | null>(null);
+
+const { isDark } = useTheme();
 
 function circle(posX: number, posY: number, r: number) {
   return `circle(${r}px at ${posX}px ${posY}px)`;
@@ -59,7 +62,7 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
 </script>
 
 <template>
-  <div ref="homeRef" class="home">
+  <div ref="homeRef" class="home" :class="{ dark: isDark }">
     <div class="bg-glow bg-glow--top" data-speed="0.03" />
     <div class="bg-glow bg-glow--bottom" data-speed="0.02" />
     <div class="bg-grid" />
@@ -318,5 +321,75 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
 }
 @media (max-width: 380px) {
   .rw-title { font-size: 2rem; }
+}
+
+/* ===== 深色模式 ===== */
+.home.dark {
+  background: #12121a !important;
+}
+
+.home.dark .rw-title {
+  color: #e0e0e0;
+  text-shadow: 
+    var(--shadow-x, 0px) var(--shadow-y, 0px) 0 rgba(255,255,255,0.12);
+}
+
+.home.dark .rw-sub {
+  color: #b0b8c8;
+}
+
+.home.dark .rw-desc {
+  color: #8a94a6;
+}
+
+.home.dark .pattern-char {
+  color: rgba(255,255,255,0.15);
+}
+
+.home.dark .text-pattern {
+  opacity: 0.12;
+}
+
+.home.dark .reveal-pattern {
+  opacity: 0.15;
+}
+
+.home.dark .pat-dark {
+  color: rgba(0,0,0,0.2);
+}
+
+.home.dark .bg-grid {
+  opacity: 0.12;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+}
+
+.home.dark .reveal-layer {
+  background: #fafbfd;
+}
+
+.home.dark .reveal-layer .rw-title,
+.home.dark .reveal-layer .rw-sub,
+.home.dark .reveal-layer .rw-desc {
+  color: #1a1a2e !important;
+}
+
+.home.dark .reveal-layer .rw-dot {
+  background: #1a73e8;
+  box-shadow: 0 0 10px rgba(26,115,232,0.35);
+}
+
+.home.dark .reveal-layer .rw-divider::before,
+.home.dark .reveal-layer .rw-divider::after {
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.15), transparent);
+}
+
+.home.dark .bg-glow--top {
+  background: radial-gradient(circle, rgba(100,140,255,0.12) 0%, transparent 70%);
+}
+
+.home.dark .bg-glow--bottom {
+  background: radial-gradient(circle, rgba(100,140,255,0.08) 0%, transparent 70%);
 }
 </style>
