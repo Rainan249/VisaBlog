@@ -135,6 +135,48 @@ img {
   color: #666 !important;
 }
 
+:root.dark .card {
+  background: #1a1a2e !important;
+  border-color: #2a2a3e !important;
+}
+
+:root.dark .card .name {
+  color: #e0e0e0 !important;
+}
+
+:root.dark .card .title-line {
+  color: #b0b8c8 !important;
+}
+
+:root.dark .card .major-line {
+  color: #888 !important;
+}
+
+:root.dark .card .bio {
+  color: #aaa !important;
+}
+
+:root.dark .divider {
+  background: #2a2a3e !important;
+}
+
+:root.dark .skill-tag {
+  background: rgba(74,158,255,0.1) !important;
+  color: #4a9eff !important;
+  border-color: rgba(74,158,255,0.2) !important;
+}
+
+:root.dark .contact-link {
+  color: #b0b8c8 !important;
+  border-color: #2a2a3e !important;
+}
+
+:root.dark .contact-link:hover {
+  background: rgba(74,158,255,0.08) !important;
+  border-color: rgba(74,158,255,0.3) !important;
+  color: #4a9eff !important;
+}
+
 :root.dark .post-page article h1 {
   color: #e0e0e0 !important;
 }
