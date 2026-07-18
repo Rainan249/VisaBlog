@@ -4,20 +4,17 @@ import { fileURLToPath } from "node:url";
 import fs from "node:fs";
 import path from "node:path";
 
+const IMG_DIR = "03 - resources/小小储物袋/Picture";
+
 export default defineConfig({
   plugins: [
     vue(),
     {
       name: "serve-posts-images",
       configureServer(server) {
-        server.middlewares.use("/posts/images", (req, res, next) => {
+        server.middlewares.use("/images", (req, res, next) => {
           const decodedUrl = decodeURIComponent(req.url || "");
-          const filePath = path.join(
-            process.cwd(),
-            "posts",
-            "images",
-            decodedUrl
-          );
+          const filePath = path.join(process.cwd(), "posts", IMG_DIR, decodedUrl);
           if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
             const ext = path.extname(filePath).toLowerCase();
             const mimeMap: Record<string, string> = {
@@ -37,8 +34,8 @@ export default defineConfig({
         });
       },
       closeBundle() {
-        const srcDir = path.join(process.cwd(), "posts", "images");
-        const destDir = path.join(process.cwd(), "dist", "posts", "images");
+        const srcDir = path.join(process.cwd(), "posts", IMG_DIR);
+        const destDir = path.join(process.cwd(), "dist", "images");
         if (fs.existsSync(srcDir)) {
           fs.mkdirSync(destDir, { recursive: true });
           for (const file of fs.readdirSync(srcDir)) {

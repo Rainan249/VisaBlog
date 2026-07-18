@@ -23,9 +23,37 @@ const processed = (post?.content || "")
 const rawHtml = (marked.parse(processed || "") as string);
 
 // 将 markdown 中的相对图片路径转为绝对路径
-const html = rawHtml.replace(
+let html = rawHtml.replace(
   /<img\s+([^>]*?)src=(['"])((?!\/|http|data:)[^'"]+)\2/g,
-  '<img $1src="/posts/images/$3"'
+  '<img $1src="/images/$3"'
+);
+
+// 为代码块添加语言标签和复制按钮
+html = html.replace(
+  /<pre><code class="language-(\w+)">([\s\S]*?)<\/code><\/pre>/g,
+  (_, lang, code) => {
+    const escaped = code
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+    return `<div class="code-block-wrap">
+      <div class="code-block-header">
+        <span class="code-lang">${lang}</span>
+        <button class="code-copy-btn" data-code="${encodeURIComponent(code)}" onclick="
+          var ta=document.createElement('textarea');
+          ta.value=decodeURIComponent(this.getAttribute('data-code'));
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          this.textContent='✓ Copied';
+          setTimeout(()=>{this.textContent='Copy';},1200);
+        ">Copy</button>
+      </div>
+      <pre><code class="language-${lang}">${escaped}</code></pre>
+    </div>`;
+  }
 );
 
 /* ========================================
@@ -742,13 +770,52 @@ watch(activeId, (id) => {
   font-size: 0.9em;
 }
 
+/* ===== 代码块增强 ===== */
+
+.post-content :deep(.code-block-wrap) {
+  margin: 16px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border, #e0e0e0);
+}
+
+.post-content :deep(.code-block-header) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 14px;
+  background: #1a1a2e;
+  font-size: 0.78rem;
+}
+
+.post-content :deep(.code-lang) {
+  color: #8888a0;
+  font-weight: 500;
+  text-transform: lowercase;
+}
+
+.post-content :deep(.code-copy-btn) {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #8888a0;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  cursor: none;
+  transition: color 0.2s;
+}
+
+.post-content :deep(.code-copy-btn:hover) {
+  color: #4a9eff;
+  border-color: rgba(74,158,255,0.4);
+}
+
 .post-content :deep(pre) {
   background: #1e1e1e;
   color: #d4d4d4;
   padding: 16px;
-  border-radius: 8px;
+  margin: 0;
   overflow-x: auto;
-  margin: 16px 0;
 }
 
 .post-content :deep(pre code) {
@@ -782,6 +849,34 @@ watch(activeId, (id) => {
 .post-content :deep(img) {
   max-width: 100%;
   border-radius: 8px;
+}
+
+/* ===== 表格 ===== */
+
+.post-content :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin: 16px 0;
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.post-content :deep(th),
+.post-content :deep(td) {
+  border: 1px solid var(--border, #e0e0e0);
+  padding: 8px 14px;
+  text-align: left;
+}
+
+.post-content :deep(th) {
+  background: var(--bg-secondary, #f5f5f5);
+  font-weight: 600;
+}
+
+.post-content :deep(tr:nth-child(even)) {
+  background: var(--bg-secondary, #fafafa);
 }
 
 /* ========================================
