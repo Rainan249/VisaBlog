@@ -27,8 +27,8 @@ function selectTag(tag: string) {
   <CursorTrail />
   <div class="blog">
     <header class="blog-header">
-      <h1>博客</h1>
-      <p>用 Markdown 写文章，用 Vue 3 搭博客</p>
+      <h1>BLOG</h1>
+      <p>Recording the bits and pieces of life</p>
     </header>
 
     <!-- 标签筛选 -->

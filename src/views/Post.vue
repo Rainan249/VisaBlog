@@ -336,7 +336,7 @@ watch(activeId, (id) => {
       <!-- Title row with progress & expand/collapse -->
       <div class="toc-header">
         <div class="toc-header-top">
-          <span class="toc-title">目录</span>
+          <span class="toc-title">CONTENTS</span>
           <span class="toc-counter">{{ tocProgress.current }} / {{ tocProgress.total }}</span>
           <div class="toc-toggle-all">
             <button
@@ -511,7 +511,7 @@ watch(activeId, (id) => {
           <div class="toc-mobile-backdrop" @click="closeMobileToc"></div>
           <aside class="toc-mobile-panel">
             <div class="toc-mobile-header">
-              <span class="toc-mobile-title">目录</span>
+              <span class="toc-mobile-title">CONTENTS</span>
               <span class="toc-counter toc-counter--mobile">{{ tocProgress.current }} / {{ tocProgress.total }}</span>
               <button class="toc-mobile-close" @click="closeMobileToc" aria-label="关闭">
                 <svg width="18" height="18" viewBox="0 0 18 18">

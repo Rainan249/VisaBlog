@@ -156,6 +156,10 @@ img {
   color: #aaa !important;
 }
 
+:root.dark .bio-list li {
+  color: #aaa !important;
+}
+
 :root.dark .divider {
   background: #2a2a3e !important;
 }

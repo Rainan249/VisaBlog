@@ -48,10 +48,13 @@ onUnmounted(() => {
       <div class="divider" />
 
       <!-- 简介 -->
-      <p class="bio">
-        Student at Jiangsu University of Science and Technology. Software Engineering Major.
-        Building things that matter, always learning new things.
-      </p>
+      <ul class="bio-list">
+        <li>INTJ · Building the future</li>
+        <li>Learning AI development</li>
+        <li>Researching Obsidian knowledge base</li>
+        <li>Love Jay Chou · Playing guitar</li>
+        <li>Aim to be a top-tier pro</li>
+      </ul>
 
       <div class="divider" />
 
@@ -70,7 +73,7 @@ onUnmounted(() => {
         </a>
         <a href="mailto:rainan249@163.com" class="contact-link">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4L12 13 2 4"/></svg>
-          <span>邮箱</span>
+          <span>Email</span>
         </a>
         <a href="https://blog.csdn.net/2502_90388158" target="_blank" class="contact-link">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14H6v-2h6v2zm4-4H6v-2h10v2zm0-4H6V7h10v2z"/></svg>
@@ -159,6 +162,35 @@ onUnmounted(() => {
   color: #666;
   line-height: 1.7;
   margin: 0;
+}
+
+.bio-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bio-list li {
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.6;
+  padding-left: 14px;
+  position: relative;
+}
+
+.bio-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1a73e8;
+  opacity: 0.5;
 }
 
 /* ===== 技能标签 ===== */

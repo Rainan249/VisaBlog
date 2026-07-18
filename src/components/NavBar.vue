@@ -6,9 +6,9 @@ import { useTheme } from "../lib/useTheme";
 const route = useRoute();
 const { isDark, toggle } = useTheme();
 const links = [
-  { path: "/", label: "首页" },
-  { path: "/blog", label: "博客" },
-  { path: "/about", label: "关于我" },
+  { path: "/", label: "HOME" },
+  { path: "/blog", label: "BLOG" },
+  { path: "/about", label: "ABOUT" },
 ];
 
 function toggleTheme() {
