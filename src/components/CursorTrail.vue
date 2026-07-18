@@ -1,67 +1,91 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from "vue";
 
-const TRAIL_LENGTH = 15;
-const dots: { x: number; y: number; el: HTMLDivElement }[] = [];
+const MAX_POINTS = 30;
+const points: { x: number; y: number; t: number }[] = [];
+let canvas: HTMLCanvasElement | null = null;
+let ctx: CanvasRenderingContext2D | null = null;
+let mouseX = -100;
+let mouseY = -100;
+let rafId = 0;
+let lastAdd = 0;
 
-for (let i = 0; i < TRAIL_LENGTH; i++) {
-  const el = document.createElement("div");
-  const size = Math.max(2, 7 - i * 0.5);
-  const opacity = Math.max(0.04, 0.5 - i * 0.045);
-  el.style.cssText = `
-    position:fixed; pointer-events:none; z-index:9999;
-    width:${size}px; height:${size}px;
-    border-radius:50%;
-    background:#1a73e8;
-    opacity:${opacity};
-    transform:translate(-50%,-50%);
-  `;
-  document.body.appendChild(el);
-  dots.push({ x: 0, y: 0, el });
+function initCanvas() {
+  canvas = document.createElement("canvas");
+  canvas.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:9999;";
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  ctx = canvas.getContext("2d")!;
 }
 
-let mouseX = 0;
-let mouseY = 0;
-let prevTime = performance.now();
+function addPoint(x: number, y: number) {
+  const now = Date.now();
+  if (now - lastAdd < 8) return;
+  lastAdd = now;
+  points.push({ x, y, t: now });
+  while (points.length > MAX_POINTS) points.shift();
+}
 
-function update() {
-  const now = performance.now();
-  const dt = Math.min((now - prevTime) / 16.67, 3); // normalize to 60fps, cap at 3
-  prevTime = now;
+function draw() {
+  if (!ctx || !canvas) return;
 
-  dots[0].x = mouseX;
-  dots[0].y = mouseY;
-  dots[0].el.style.left = mouseX + "px";
-  dots[0].el.style.top = mouseY + "px";
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const lerp = 0.12;
-  for (let i = dots.length - 1; i > 0; i--) {
-    const t = 1 - Math.pow(1 - lerp, dt);
-    dots[i].x += (dots[i - 1].x - dots[i].x) * t;
-    dots[i].y += (dots[i - 1].y - dots[i].y) * t;
-    dots[i].el.style.left = dots[i].x + "px";
-    dots[i].el.style.top = dots[i].y + "px";
+  const now = Date.now();
+
+  for (let i = 1; i < points.length; i++) {
+    const p0 = points[i - 1];
+    const p1 = points[i];
+    const age = (now - p1.t) / 800; // 0 → 1 over 0.8 seconds
+    if (age > 1) continue;
+
+    const ease = Math.cos((age * Math.PI) / 2); // smooth 1→0
+    if (ease < 0.01) continue;
+    const alpha = 0.5 * ease;
+    const width = 14 * ease;
+    const hue = (i / points.length) * 300;
+
+    ctx!.beginPath();
+    ctx!.moveTo(p0.x, p0.y);
+    ctx!.lineTo(p1.x, p1.y);
+    ctx!.strokeStyle = `hsla(${hue}, 80%, 55%, ${alpha})`;
+    ctx!.lineWidth = width;
+    ctx!.lineCap = "round";
+    ctx!.stroke();
   }
 
-  requestAnimationFrame(update);
+  rafId = requestAnimationFrame(draw);
 }
 
 function onMouseMove(e: MouseEvent) {
   mouseX = e.clientX;
   mouseY = e.clientY;
+  addPoint(mouseX, mouseY);
+}
+
+function onResize() {
+  if (canvas) {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
 }
 
 onMounted(() => {
+  initCanvas();
   window.addEventListener("mousemove", onMouseMove, { passive: true });
-  requestAnimationFrame(update);
+  window.addEventListener("resize", onResize);
+  draw();
 });
 
 onUnmounted(() => {
   window.removeEventListener("mousemove", onMouseMove);
-  dots.forEach((d) => d.el.remove());
+  window.removeEventListener("resize", onResize);
+  cancelAnimationFrame(rafId);
+  canvas?.remove();
 });
 </script>
 
 <template>
-  <!-- Cursor trail rendered dynamically -->
+  <!-- Canvas cursor trail -->
 </template>
