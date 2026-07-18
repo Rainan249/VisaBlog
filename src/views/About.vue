@@ -84,11 +84,10 @@ onUnmounted(() => {
           <span>&nbsp X &nbsp</span>
         </a>
       </div>
-      <div class="divider" />
-
-      <!-- 站点运行时间 -->
-      <div class="runtime">{{ timeText }}</div>
     </div>
+
+    <!-- 站点运行时间 -->
+    <div class="runtime">{{ timeText }}</div>
   </div>
 </template>
 
@@ -124,20 +123,20 @@ onUnmounted(() => {
 }
 
 .name {
-  font-size: 1.5rem;
+  font-size: 1.7rem;
   font-weight: 700;
   margin: 0 0 2px;
   color: #1a1a2e;
 }
 
 .title-line {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #666;
   margin: 0 0 1px;
 }
 
 .major-line {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: #999;
   margin: 0;
 }
@@ -178,7 +177,7 @@ onUnmounted(() => {
 }
 
 .bio-list li {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   color: #666;
   line-height: 1.6;
   padding-left: 14px;
@@ -206,9 +205,9 @@ onUnmounted(() => {
 }
 
 .skill-tag {
-  padding: 4px 14px;
+  padding: 6px 16px;
   border-radius: 20px;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   background: rgba(26,115,232,0.07);
   color: #1a73e8;
   border: 1px solid rgba(26,115,232,0.15);
@@ -230,7 +229,7 @@ onUnmounted(() => {
   padding: 8px 16px;
   border-radius: 10px;
   color: #555;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   text-decoration: none;
   transition: background 0.2s, color 0.2s;
   border: 1px solid #eee;
@@ -248,12 +247,17 @@ onUnmounted(() => {
   color: #1a73e8;
 }
 
-/* ===== 运行时间 ===== */
+/* ===== 运行时间（固定在底部） ===== */
 
 .runtime {
+  position: fixed;
+  bottom: 16px;
+  left: 0;
+  right: 0;
   text-align: center;
   font-size: 0.82rem;
   color: #aaa;
+  pointer-events: none;
 }
 
 /* ===== 响应式 ===== */
