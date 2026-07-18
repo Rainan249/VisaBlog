@@ -32,17 +32,15 @@ let html = rawHtml.replace(
 html = html.replace(
   /<pre><code class="language-(\w+)">([\s\S]*?)<\/code><\/pre>/g,
   (_, lang, code) => {
-    const escaped = code
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+    // code 已被 marked HTML 转义，直接用于显示
+    // 复制时需解码 HTML 实体
     return `<div class="code-block-wrap">
       <div class="code-block-header">
         <span class="code-lang">${lang}</span>
         <button class="code-copy-btn" data-code="${encodeURIComponent(code)}" onclick="
           var ta=document.createElement('textarea');
-          ta.value=decodeURIComponent(this.getAttribute('data-code'));
+          ta.innerHTML=decodeURIComponent(this.getAttribute('data-code'));
+          ta.value=ta.textContent||ta.innerText||'';
           document.body.appendChild(ta);
           ta.select();
           document.execCommand('copy');
@@ -51,7 +49,7 @@ html = html.replace(
           setTimeout(()=>{this.textContent='Copy';},1200);
         ">Copy</button>
       </div>
-      <pre><code class="language-${lang}">${escaped}</code></pre>
+      <pre><code class="language-${lang}">${code}</code></pre>
     </div>`;
   }
 );

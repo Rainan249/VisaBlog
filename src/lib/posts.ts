@@ -38,7 +38,7 @@ function getAllPostsRaw(): Post[] {
         ? data.date instanceof Date
           ? data.date.toISOString().split("T")[0]
           : String(data.date)
-        : "",
+        : new Date().toISOString().split("T")[0],
       tags: data.tags || [],
       content,
     });
