@@ -20,7 +20,7 @@ const processed = (post?.content || "")
     (_match, filename) => `![${filename}](${encodeURI(filename)})`
   );
 
-const rawHtml = processed ? marked.parse(processed) : "";
+const rawHtml = (marked.parse(processed || "") as string);
 
 // 将 markdown 中的相对图片路径转为绝对路径
 const html = rawHtml.replace(
