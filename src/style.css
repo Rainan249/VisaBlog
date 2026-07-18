@@ -19,14 +19,14 @@
 }
 
 :root.dark {
-  --bg: #12121a;
-  --bg-secondary: #1a1a2e;
+  --bg: #161618;
+  --bg-secondary: #1c1c1e;
   --text: #e0e0e0;
-  --text-secondary: #999;
-  --border: #2a2a3e;
-  --card-bg: #1a1a2e;
-  --code-bg: #2a2a3e;
-  --blockquote-bg: #1a1a2e;
+  --text-secondary: #a0a0a0;
+  --border: #2c2c2e;
+  --card-bg: #222224;
+  --code-bg: #111112;
+  --blockquote-bg: #1c1c1e;
   --blockquote-border: #4a9eff;
   color-scheme: dark;
 }
@@ -59,12 +59,12 @@ img {
 /* ========== Global dark mode overrides ========== */
 
 :root.dark .navbar {
-  background: #1a1a2e !important;
-  border-color: #2a2a3e !important;
+  background: #222224 !important;
+  border-color: #333335 !important;
 }
 
 :root.dark .navbar a {
-  color: #b0b8c8 !important;
+  color: #a0a0a0 !important;
 }
 :root.dark .navbar a:hover,
 :root.dark .navbar a.active {
@@ -87,11 +87,11 @@ img {
 :root.dark .about p,
 :root.dark .blog time,
 :root.dark .about .content {
-  color: #b0b8c8 !important;
+  color: #a0a0a0 !important;
 }
 
 :root.dark .post-card {
-  border-color: #2a2a3e !important;
+  border-color: #333335 !important;
 }
 
 :root.dark .post-card h2 {
@@ -107,17 +107,17 @@ img {
 }
 
 :root.dark .tag {
-  background: #2a2a3e !important;
-  color: #b0b8c8 !important;
+  background: #333335 !important;
+  color: #a0a0a0 !important;
 }
 
 :root.dark .tag-bar {
-  border-bottom-color: #2a2a3e !important;
+  border-bottom-color: #333335 !important;
 }
 
 :root.dark .tag-btn {
-  border-color: #3a3a5e !important;
-  color: #b0b8c8 !important;
+  border-color: #444446 !important;
+  color: #a0a0a0 !important;
 }
 
 :root.dark .tag-btn:hover {
@@ -136,8 +136,8 @@ img {
 }
 
 :root.dark .card {
-  background: #1a1a2e !important;
-  border-color: #2a2a3e !important;
+  background: #222224 !important;
+  border-color: #333335 !important;
 }
 
 :root.dark .card .name {
@@ -145,7 +145,7 @@ img {
 }
 
 :root.dark .card .title-line {
-  color: #b0b8c8 !important;
+  color: #a0a0a0 !important;
 }
 
 :root.dark .card .major-line {
@@ -161,7 +161,7 @@ img {
 }
 
 :root.dark .divider {
-  background: #2a2a3e !important;
+  background: #333335 !important;
 }
 
 :root.dark .skill-tag {
@@ -171,8 +171,8 @@ img {
 }
 
 :root.dark .contact-link {
-  color: #b0b8c8 !important;
-  border-color: #2a2a3e !important;
+  color: #a0a0a0 !important;
+  border-color: #333335 !important;
 }
 
 :root.dark .contact-link:hover {
@@ -196,22 +196,22 @@ img {
 
 :root.dark .post-content p,
 :root.dark .post-content li {
-  color: #c0c8d0 !important;
+  color: #b8b8b8 !important;
 }
 
 :root.dark .post-content code {
-  background: #2a2a3e !important;
+  background: #333335 !important;
   color: #e0e0e0 !important;
 }
 
 :root.dark .post-content pre {
-  background: #0d0d14 !important;
+  background: #111112 !important;
 }
 
 :root.dark .post-content blockquote {
-  background: #1a1a2e !important;
+  background: #222224 !important;
   border-left-color: #4a9eff !important;
-  color: #b0b8c8 !important;
+  color: #a0a0a0 !important;
 }
 
 :root.dark .toc-sidebar .toc-link--h2 {

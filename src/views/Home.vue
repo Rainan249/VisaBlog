@@ -183,7 +183,7 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
   pointer-events: none;
   clip-path: circle(0px at 0px 0px);
   will-change: clip-path;
-  background: #12121a;
+  background: #161618;
   opacity: 0;
   transition: opacity 0.9s ease-out;
 }
@@ -196,7 +196,7 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
   pointer-events: none;
   clip-path: circle(0px at 0px 0px);
   will-change: clip-path;
-  background: #12121a;
+  background: #161618;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -245,7 +245,7 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
   line-height: 1.2;
   white-space: nowrap;
   margin: 0 0 24px;
-  color: #1a1a2e;
+  color: #262628;
   text-shadow: 
     var(--shadow-x, 0px) var(--shadow-y, 0px) 0 rgba(26,115,232,0.25);
   animation: fadeUp 0.7s 0.05s cubic-bezier(0.22,0.61,0.36,1) both;
@@ -325,7 +325,7 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
 
 /* ===== 深色模式 ===== */
 .home.dark {
-  background: #12121a !important;
+  background: #161618 !important;
 }
 
 .home.dark .rw-title {
@@ -335,11 +335,11 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
 }
 
 .home.dark .rw-sub {
-  color: #b0b8c8;
+  color: #a0a0a0;
 }
 
 .home.dark .rw-desc {
-  color: #8a94a6;
+  color: #888888;
 }
 
 .home.dark .pattern-char {
@@ -372,7 +372,7 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
 .home.dark .reveal-layer .rw-title,
 .home.dark .reveal-layer .rw-sub,
 .home.dark .reveal-layer .rw-desc {
-  color: #1a1a2e !important;
+  color: #262628 !important;
 }
 
 .home.dark .reveal-layer .rw-dot {
