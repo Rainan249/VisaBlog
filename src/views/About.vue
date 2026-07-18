@@ -1,6 +1,33 @@
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from "vue";
 import CursorTrail from "../components/CursorTrail.vue";
 import avatar from "../assets/头像.jpg";
+
+const START_DATE = "2026-07-16T14:30:00";
+const timeText = ref("");
+
+function updateTime() {
+  const start = new Date(START_DATE).getTime();
+  const diff = Date.now() - start;
+
+  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+  const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+  const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
+  const seconds = Math.floor((diff % (60 * 1000)) / 1000);
+
+  timeText.value = `已运行 ${days} 天 ${hours} 小时 ${minutes} 分 ${seconds} 秒`;
+}
+
+let timer: ReturnType<typeof setInterval> | null = null;
+
+onMounted(() => {
+  updateTime();
+  timer = setInterval(updateTime, 1000); // 每秒更新
+});
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer);
+});
 </script>
 
 <template>
@@ -50,6 +77,10 @@ import avatar from "../assets/头像.jpg";
           <span>CSDN</span>
         </a>
       </div>
+      <div class="divider" />
+
+      <!-- 站点运行时间 -->
+      <div class="runtime">{{ timeText }}</div>
     </div>
   </div>
 </template>
@@ -179,6 +210,14 @@ import avatar from "../assets/头像.jpg";
 .contact-link svg {
   flex-shrink: 0;
   color: #1a73e8;
+}
+
+/* ===== 运行时间 ===== */
+
+.runtime {
+  text-align: center;
+  font-size: 0.82rem;
+  color: #aaa;
 }
 
 /* ===== 响应式 ===== */

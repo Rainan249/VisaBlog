@@ -1,0 +1,199 @@
+{
+  "main": {
+    "id": "0358afe2bf858c3b",
+    "type": "split",
+    "children": [
+      {
+        "id": "c137de481b28274a",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e9deb7c744d4ea44",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "python.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "python"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "008e854aba7ff862",
+    "type": "split",
+    "children": [
+      {
+        "id": "776b330245ece123",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "8db432c61958309d",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "cb3938fcd2c34f31",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "1a23ecf7dc6f537e",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "d498712608ef64f2",
+    "type": "split",
+    "children": [
+      {
+        "id": "eb715399ca7daa07",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "dd4dfef74669c2c5",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "python.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "python 的反向链接列表"
+            }
+          },
+          {
+            "id": "6b1f6d8ef109c482",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "python.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "python 的出链列表"
+            }
+          },
+          {
+            "id": "d5687488398917bd",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "ed8d365bd68e0171",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "添加笔记属性"
+            }
+          },
+          {
+            "id": "3a5c957ec20b6ef0",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "python.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "python 的大纲"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "bases:新建数据库": false
+    }
+  },
+  "active": "e9deb7c744d4ea44",
+  "lastOpenFiles": [
+    "images/Pasted image 20260401210013.png",
+    "python.md",
+    "03 - resources/小小储物袋/Picture",
+    "03 - resources/小小储物袋",
+    "03 - resources",
+    "02 - areas/学业发展/code/Python/001-087.自学部分.md",
+    "02 - areas/学业发展/code/Python",
+    "02 - areas/学业发展/code",
+    "02 - areas/学业发展",
+    "02 - areas"
+  ]
+}

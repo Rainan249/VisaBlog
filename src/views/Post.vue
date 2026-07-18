@@ -13,7 +13,20 @@ if (post) {
   document.title = post.title;
 }
 
-const html = post ? marked.parse(post.content) : "";
+// 处理 Obsidian 的 ![[file.png]] 图片语法 → 标准 markdown
+const processed = (post?.content || "")
+  .replace(
+    /!\[\[([^\]]+\.(png|jpg|jpeg|gif|svg|webp|bmp))\]\]/gi,
+    (_match, filename) => `![${filename}](${encodeURI(filename)})`
+  );
+
+const rawHtml = processed ? marked.parse(processed) : "";
+
+// 将 markdown 中的相对图片路径转为绝对路径
+const html = rawHtml.replace(
+  /<img\s+([^>]*?)src=(['"])((?!\/|http|data:)[^'"]+)\2/g,
+  '<img $1src="/posts/images/$3"'
+);
 
 /* ========================================
    Table of Contents
