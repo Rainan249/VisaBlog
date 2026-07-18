@@ -4,6 +4,8 @@ import { useRoute } from "vue-router";
 import { getPostBySlug } from "../lib/posts";
 import { marked } from "marked";
 import { ElProgress } from "element-plus";
+import hljs from "highlight.js";
+import "highlight.js/styles/github-dark-dimmed.min.css";
 
 const route = useRoute();
 const slug = route.params.slug as string;
@@ -315,6 +317,10 @@ onMounted(async () => {
   tocItems.value = buildToc();
   collapsedGroups.value = new Set(collectParentIds(tocItems.value));
   setupObserver();
+  // 代码高亮
+  document.querySelectorAll(".post-content pre code").forEach((el) => {
+    hljs.highlightElement(el as HTMLElement);
+  });
 });
 
 // Rebuild TOC when navigating to another post (component reuse)
@@ -774,7 +780,7 @@ watch(activeId, (id) => {
   margin: 16px 0;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid var(--border, #e0e0e0);
+  border: 1px solid #3a3a3a;
 }
 
 .post-content :deep(.code-block-header) {
@@ -782,20 +788,20 @@ watch(activeId, (id) => {
   justify-content: space-between;
   align-items: center;
   padding: 5px 14px;
-  background: #1a1a2e;
+  background: #2a2a2a;
   font-size: 0.78rem;
 }
 
 .post-content :deep(.code-lang) {
-  color: #8888a0;
+  color: #999;
   font-weight: 500;
   text-transform: lowercase;
 }
 
 .post-content :deep(.code-copy-btn) {
   background: none;
-  border: 1px solid rgba(255,255,255,0.1);
-  color: #8888a0;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #888;
   padding: 2px 10px;
   border-radius: 4px;
   font-size: 0.72rem;
@@ -804,8 +810,8 @@ watch(activeId, (id) => {
 }
 
 .post-content :deep(.code-copy-btn:hover) {
-  color: #4a9eff;
-  border-color: rgba(74,158,255,0.4);
+  color: #ccc;
+  border-color: rgba(255,255,255,0.2);
 }
 
 .post-content :deep(pre) {
