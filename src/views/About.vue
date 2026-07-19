@@ -60,7 +60,7 @@ onUnmounted(() => {
 
       <!-- 技能标签 -->
       <div class="skills">
-        <span class="skill-tag" v-for="skill in ['Spring','Java','Vue','MySQL','JavaScript','Python','Git']" :key="skill">{{ skill }}</span>
+        <span class="skill-tag" v-for="skill in ['Spring','Java','Vue3','MySQL','JavaScript','Python','Git']" :key="skill">{{ skill }}</span>
       </div>
 
       <div class="divider" />
