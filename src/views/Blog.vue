@@ -64,7 +64,7 @@ function selectTag(tag: string) {
     </div>
 
     <div class="post-list">
-      <template v-for="([month, posts], gi) in groupedPosts" :key="month">
+      <template v-for="([month, posts]) in groupedPosts" :key="month">
         <h3 class="month-header">{{ formatMonth(month) }}</h3>
         <article v-for="post in posts" :key="post.slug" class="post-card">
           <a :href="`/blog/${post.slug}`" target="_blank" class="post-link">
