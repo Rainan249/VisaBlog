@@ -1,4 +1,5 @@
 import matter from "gray-matter";
+import createTimes from "virtual:md-create-times";
 
 export interface PostMeta {
   slug: string;
@@ -30,6 +31,9 @@ function getAllPostsRaw(): Post[] {
     // Obsidian 文件名可能有编号前缀如 "001-030.xxx"，保留原样
     const raw = modules[filepath] as string;
     const { data, content } = matter(raw);
+    if (!data.date) {
+      console.log("[posts] slug:", slug, "| createTimes[slug]:", createTimes[slug]);
+    }
 
     posts.push({
       slug,
@@ -38,7 +42,7 @@ function getAllPostsRaw(): Post[] {
         ? data.date instanceof Date
           ? data.date.toISOString().split("T")[0]
           : String(data.date)
-        : new Date().toISOString().split("T")[0],
+        : createTimes[slug] || new Date().toISOString().split("T")[0],
       tags: data.tags || [],
       content,
     });
