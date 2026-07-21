@@ -91,7 +91,7 @@ onUnmounted(() => {
 .about {
   max-width: 760px;
   margin: 0 auto;
-  padding: 48px 24px;
+  padding: 24px 24px;
 }
 
 .card {
@@ -99,14 +99,17 @@ onUnmounted(() => {
   border: 1px solid #eee;
   padding: 36px 32px;
   background: #fff;
+  text-align: center;
 }
 
 /* ===== 头部（头像 + 名称一行） ===== */
 
 .card-head {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 20px;
+  justify-content: center;
+  gap: 12px;
 }
 
 .avatar {
@@ -116,6 +119,10 @@ onUnmounted(() => {
   object-fit: cover;
   flex-shrink: 0;
   box-shadow: 0 4px 14px rgba(26,115,232,0.2);
+}
+
+.head-info {
+  text-align: left;
 }
 
 .name {
@@ -170,21 +177,21 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  text-align: center;
 }
 
 .bio-list li {
   font-size: 1.05rem;
   color: #666;
   line-height: 1.6;
-  padding-left: 14px;
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .bio-list li::before {
   content: "";
-  position: absolute;
-  left: 0;
-  top: 8px;
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -198,6 +205,7 @@ onUnmounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  justify-content: center;
 }
 
 .skill-tag {
@@ -216,6 +224,7 @@ onUnmounted(() => {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .contact-link {
@@ -243,17 +252,13 @@ onUnmounted(() => {
   color: #1a73e8;
 }
 
-/* ===== 运行时间（固定在底部） ===== */
+/* ===== 运行时间 ===== */
 
 .runtime {
-  position: fixed;
-  bottom: 16px;
-  left: 0;
-  right: 0;
   text-align: center;
   font-size: 0.82rem;
   color: #aaa;
-  pointer-events: none;
+  margin-top: 16px;
 }
 
 /* ===== 响应式 ===== */
