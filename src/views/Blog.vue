@@ -6,6 +6,7 @@ import CursorTrail from "../components/CursorTrail.vue";
 
 const allPosts = getAllPosts() as PostMeta[];
 const activeTag = ref("");
+const searchQuery = ref("");
 
 const tags = computed(() => {
   const set = new Set<string>();
@@ -14,8 +15,19 @@ const tags = computed(() => {
 });
 
 const filteredPosts = computed(() => {
-  if (!activeTag.value) return allPosts;
-  return allPosts.filter((p) => p.tags.includes(activeTag.value));
+  let list = allPosts;
+  if (activeTag.value) {
+    list = list.filter((p) => p.tags.includes(activeTag.value));
+  }
+  const q = searchQuery.value.trim().toLowerCase();
+  if (q) {
+    list = list.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.tags.some((t) => t.toLowerCase().includes(q))
+    );
+  }
+  return list;
 });
 
 const groupedPosts = computed(() => {
@@ -43,7 +55,24 @@ function selectTag(tag: string) {
   <CursorTrail />
   <div class="blog">
     <header class="blog-header">
-      <h1>BLOG</h1>
+      <div class="blog-header-top">
+        <h1>BLOG</h1>
+        <div class="search-wrapper">
+          <button class="search-toggle">
+            <svg class="search-glass" viewBox="0 0 24 24" fill="none">
+              <circle cx="10.5" cy="10.5" r="7" stroke="currentColor" stroke-width="2.2" />
+              <line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+            </svg>
+          </button>
+          <input
+            ref="searchInputRef"
+            v-model="searchQuery"
+            type="text"
+            placeholder="搜索文章..."
+            class="search-input"
+          />
+        </div>
+      </div>
       <p>Recording the bits and pieces of life</p>
     </header>
 
@@ -93,10 +122,16 @@ function selectTag(tag: string) {
   margin-bottom: 32px;
 }
 
+.blog-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .blog-header h1 {
   font-size: 2rem;
   font-weight: 700;
-  margin: 0 0 8px;
+  margin: 0;
 }
 
 .blog-header p {
@@ -135,6 +170,92 @@ function selectTag(tag: string) {
   background: #1a73e8;
   border-color: #1a73e8;
   color: #fff;
+}
+
+/* ===== 搜索框 ===== */
+
+.search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding-right: 4px;
+}
+
+.search-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  color: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: none;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.search-toggle:hover {
+  background: linear-gradient(135deg, #e8f0fe 0%, #d2e3fc 100%);
+  color: #1a73e8;
+  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2);
+  transform: scale(1.08);
+}
+
+.search-toggle:active {
+  transform: scale(0.95);
+}
+
+.search-wrapper:hover .search-toggle {
+  background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(26, 115, 232, 0.35);
+}
+
+.search-glass {
+  width: 20px;
+  height: 20px;
+}
+
+.search-input {
+  height: 40px;
+  width: 0;
+  padding: 0;
+  margin-left: 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: #fff;
+  font-size: 0.875rem;
+  outline: none;
+  color: #333;
+  border-radius: 20px;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    padding 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease 0.15s,
+    border-color 0.3s ease;
+  box-shadow: none;
+}
+
+.search-wrapper:hover .search-input {
+  width: 220px;
+  padding: 0 16px 0 12px;
+  margin-left: 8px;
+  opacity: 1;
+  pointer-events: auto;
+  border-bottom-color: #1a73e8;
+  box-shadow: 0 2px 12px rgba(26, 115, 232, 0.12);
+}
+
+.search-input::placeholder {
+  color: #aaa;
 }
 
 /* ===== 月份分组 ===== */
