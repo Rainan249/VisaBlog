@@ -31,9 +31,6 @@ function getAllPostsRaw(): Post[] {
     // Obsidian 文件名可能有编号前缀如 "001-030.xxx"，保留原样
     const raw = modules[filepath] as string;
     const { data, content } = matter(raw);
-    if (!data.date) {
-      console.log("[posts] slug:", slug, "| createTimes[slug]:", createTimes[slug]);
-    }
 
     posts.push({
       slug,

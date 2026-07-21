@@ -18,6 +18,22 @@ const filteredPosts = computed(() => {
   return allPosts.filter((p) => p.tags.includes(activeTag.value));
 });
 
+const groupedPosts = computed(() => {
+  const map = new Map<string, PostMeta[]>();
+  for (const post of filteredPosts.value) {
+    const d = post.date;
+    const key = d.slice(0, 7); // "YYYY-MM"
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(post);
+  }
+  return Array.from(map.entries());
+});
+
+function formatMonth(key: string) {
+  const [y, m] = key.split("-");
+  return `${y}年${Number(m)}月`;
+}
+
 function selectTag(tag: string) {
   activeTag.value = activeTag.value === tag ? "" : tag;
 }
@@ -48,15 +64,18 @@ function selectTag(tag: string) {
     </div>
 
     <div class="post-list">
-      <article v-for="post in filteredPosts" :key="post.slug" class="post-card">
-        <a :href="`/blog/${post.slug}`" target="_blank" class="post-link">
-          <h2>{{ post.title }}</h2>
-          <div class="post-meta">
-            <time>{{ post.date }}</time>
-            <span v-for="tag in post.tags" :key="tag" class="tag">{{ tag }}</span>
-          </div>
-        </a>
-      </article>
+      <template v-for="([month, posts], gi) in groupedPosts" :key="month">
+        <h3 class="month-header">{{ formatMonth(month) }}</h3>
+        <article v-for="post in posts" :key="post.slug" class="post-card">
+          <a :href="`/blog/${post.slug}`" target="_blank" class="post-link">
+            <h2>{{ post.title }}</h2>
+            <div class="post-meta">
+              <time>{{ post.date }}</time>
+              <span v-for="tag in post.tags" :key="tag" class="tag">{{ tag }}</span>
+            </div>
+          </a>
+        </article>
+      </template>
 
       <p v-if="filteredPosts.length === 0" class="empty">没有找到相关文章</p>
     </div>
@@ -118,6 +137,18 @@ function selectTag(tag: string) {
   color: #fff;
 }
 
+/* ===== 月份分组 ===== */
+
+.month-header {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #333;
+  margin: 16px 0 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #1a73e8;
+  letter-spacing: 0.02em;
+}
+
 /* ===== 文章列表 ===== */
 
 .post-list {
@@ -152,8 +183,12 @@ function selectTag(tag: string) {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: #888;
+}
+
+.post-meta time {
+  font-weight: 500;
 }
 
 .tag {

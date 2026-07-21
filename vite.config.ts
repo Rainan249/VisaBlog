@@ -31,7 +31,6 @@ export default defineConfig({
             }
           }
           walk(postsDir);
-          console.log("[md-create-times] keys:", Object.keys(map));
           return `export default ${JSON.stringify(map)}`;
         }
       },
