@@ -88,7 +88,8 @@ function toggleTheme() {
 .nav-links a {
   color: #666;
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
+  font-weight: 500;
   padding: 4px 0;
   transition: color 0.2s;
 }

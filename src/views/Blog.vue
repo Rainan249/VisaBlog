@@ -31,20 +31,36 @@ const filteredPosts = computed(() => {
 });
 
 const groupedPosts = computed(() => {
-  const map = new Map<string, PostMeta[]>();
-  for (const post of filteredPosts.value) {
-    const d = post.date;
-    const key = d.slice(0, 7); // "YYYY-MM"
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(post);
-  }
-  return Array.from(map.entries());
-});
+  // year → month → posts[]
+  const yearMap = new Map<number, Map<string, PostMeta[]>>();
+  const monthNames = ["", "一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
+  const monthEn = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-function formatMonth(key: string) {
-  const [y, m] = key.split("-");
-  return `${y}年${Number(m)}月`;
-}
+  for (const post of filteredPosts.value) {
+    const [y, m] = post.date.split("-");
+    const year = Number(y);
+    const monthKey = m;
+
+    if (!yearMap.has(year)) yearMap.set(year, new Map());
+    const monthMap = yearMap.get(year)!;
+    if (!monthMap.has(monthKey)) monthMap.set(monthKey, []);
+    monthMap.get(monthKey)!.push(post);
+  }
+
+  // 排序：年份降序，月份降序
+  const result: { year: number; months: { key: string; label: string; posts: PostMeta[] }[] }[] = [];
+  for (const [year, monthMap] of Array.from(yearMap.entries()).sort((a, b) => b[0] - a[0])) {
+    const months = Array.from(monthMap.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([key, posts]) => ({
+        key,
+        label: `${monthNames[Number(key)]} · ${monthEn[Number(key)]}`,
+        posts,
+      }));
+    result.push({ year, months });
+  }
+  return result;
+});
 
 function selectTag(tag: string) {
   activeTag.value = activeTag.value === tag ? "" : tag;
@@ -92,18 +108,22 @@ function selectTag(tag: string) {
       >{{ tag }}</button>
     </div>
 
-    <div class="post-list">
-      <template v-for="([month, posts]) in groupedPosts" :key="month">
-        <h3 class="month-header">{{ formatMonth(month) }}</h3>
-        <article v-for="post in posts" :key="post.slug" class="post-card">
-          <a :href="`/blog/${post.slug}`" target="_blank" class="post-link">
-            <h2>{{ post.title }}</h2>
-            <div class="post-meta">
-              <time>{{ post.date }}</time>
-              <span v-for="tag in post.tags" :key="tag" class="tag">{{ tag }}</span>
-            </div>
-          </a>
-        </article>
+    <div class="timeline">
+      <template v-for="group in groupedPosts" :key="group.year">
+        <!-- 年份 -->
+        <h2 class="year-header">{{ group.year }}</h2>
+
+        <template v-for="month in group.months" :key="month.key">
+          <!-- 月份 -->
+          <h3 class="month-header">{{ month.label }}</h3>
+          <ul class="timeline-list">
+            <li v-for="post in month.posts" :key="post.slug" class="timeline-item">
+              <span class="item-day">{{ Number(post.date.slice(8)) }}</span>
+              <a :href="`/blog/${post.slug}`" target="_blank" class="item-title">{{ post.title }}</a>
+              <span v-for="tag in post.tags" :key="tag" class="item-tag">{{ tag }}</span>
+            </li>
+          </ul>
+        </template>
       </template>
 
       <p v-if="filteredPosts.length === 0" class="empty">没有找到相关文章</p>
@@ -129,7 +149,7 @@ function selectTag(tag: string) {
 }
 
 .blog-header h1 {
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 700;
   margin: 0;
 }
@@ -137,6 +157,7 @@ function selectTag(tag: string) {
 .blog-header p {
   color: #666;
   margin: 0;
+  font-size: 1.05rem;
 }
 
 /* ===== 标签栏 ===== */
@@ -156,7 +177,7 @@ function selectTag(tag: string) {
   border: 1px solid #e0e0e0;
   background: transparent;
   color: #666;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   cursor: none;
   transition: all 0.2s;
 }
@@ -258,66 +279,91 @@ function selectTag(tag: string) {
   color: #aaa;
 }
 
-/* ===== 月份分组 ===== */
+/* ===== 时间轴 ===== */
+
+.timeline {
+  margin-top: 8px;
+}
+
+/* ===== 年份 ===== */
+
+.year-header {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #222;
+  margin: 32px 0 4px;
+  letter-spacing: -0.02em;
+}
+
+/* ===== 月份 ===== */
 
 .month-header {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #333;
-  margin: 16px 0 0;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #1a73e8;
-  letter-spacing: 0.02em;
+  position: relative;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #666;
+  margin: 16px 0 6px;
+  padding-left: 12px;
+}
+
+.month-header::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 3px;
+  bottom: 3px;
+  width: 2.5px;
+  border-radius: 2px;
+  background: #1a73e8;
 }
 
 /* ===== 文章列表 ===== */
 
-.post-list {
+.timeline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.timeline-item {
   display: flex;
-  flex-direction: column;
-  gap: 24px;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+  line-height: 1.5;
 }
 
-.post-card {
-  border-bottom: 1px solid #eee;
-  padding-bottom: 24px;
-}
-
-.post-link {
-  text-decoration: none;
-  color: inherit;
-  display: block;
-}
-
-.post-link:hover h2 {
-  color: #1a73e8;
-}
-
-.post-link h2 {
-  font-size: 1.4rem;
+.item-day {
+  flex-shrink: 0;
+  width: 24px;
+  font-size: 0.9rem;
   font-weight: 600;
-  margin: 0 0 8px;
+  color: #aaa;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.item-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.05rem;
+  color: #333;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   transition: color 0.2s;
 }
 
-.post-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 1rem;
-  color: #888;
+.item-title:hover {
+  color: #1a73e8;
+  text-decoration: underline;
 }
 
-.post-meta time {
-  font-weight: 500;
-}
-
-.tag {
-  background: #f0f0f0;
-  padding: 2px 10px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  color: #555;
+.item-tag {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  color: #999;
 }
 
 .empty {

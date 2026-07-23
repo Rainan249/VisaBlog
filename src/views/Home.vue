@@ -239,7 +239,7 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
 
 /* ===== 共用文字样式 ===== */
 .rw-title {
-  font-size: clamp(3.25rem,7.5vw,5rem);
+  font-size: clamp(3.5rem,8vw,5.5rem);
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1.2;
@@ -251,7 +251,7 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
   animation: fadeUp 0.7s 0.05s cubic-bezier(0.22,0.61,0.36,1) both;
 }
 .rw-sub {
-  font-size: clamp(1.2rem,3vw,1.5rem);
+  font-size: clamp(1.3rem,3.5vw,1.7rem);
   font-weight: 400;
   color: #4a4a60;
   margin: 0;
@@ -280,7 +280,7 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
   box-shadow: 0 0 10px rgba(26,115,232,0.35);
 }
 .rw-desc {
-  font-size: clamp(1rem,2.2vw,1.15rem);
+  font-size: clamp(1.1rem,2.5vw,1.3rem);
   color: #6b7280;
   margin: 0 0 48px;
   line-height: 1.75;

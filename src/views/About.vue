@@ -126,20 +126,20 @@ onUnmounted(() => {
 }
 
 .name {
-  font-size: 1.7rem;
+  font-size: 1.9rem;
   font-weight: 700;
   margin: 0 0 2px;
   color: #1a1a2e;
 }
 
 .title-line {
-  font-size: 1rem;
+  font-size: 1.1rem;
   color: #666;
   margin: 0 0 1px;
 }
 
 .major-line {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   color: #999;
   margin: 0;
 }
@@ -181,7 +181,7 @@ onUnmounted(() => {
 }
 
 .bio-list li {
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   color: #666;
   line-height: 1.6;
   display: flex;
@@ -211,7 +211,7 @@ onUnmounted(() => {
 .skill-tag {
   padding: 6px 16px;
   border-radius: 20px;
-  font-size: 0.9rem;
+  font-size: 1rem;
   background: rgba(26,115,232,0.07);
   color: #1a73e8;
   border: 1px solid rgba(26,115,232,0.15);
@@ -234,7 +234,7 @@ onUnmounted(() => {
   padding: 8px 16px;
   border-radius: 10px;
   color: #555;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   text-decoration: none;
   transition: background 0.2s, color 0.2s;
   border: 1px solid #eee;
