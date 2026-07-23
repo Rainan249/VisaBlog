@@ -257,6 +257,7 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
   margin: 0;
   line-height: 1.5;
   letter-spacing: 0.03em;
+  text-shadow: var(--shadow-x, 0px) var(--shadow-y, 0px) 0 rgba(26,115,232,0.2);
   animation: fadeUp 0.7s 0.15s cubic-bezier(0.22,0.61,0.36,1) both;
 }
 .rw-divider {
@@ -270,6 +271,7 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
   content: "";
   width: 40px; height: 1.5px;
   background: linear-gradient(90deg, transparent, #d0d5dd, transparent);
+  filter: drop-shadow(var(--shadow-x, 0px) var(--shadow-y, 0px) 0 rgba(26,115,232,0.15));
 }
 .rw-dot {
   display: block;
@@ -277,19 +279,22 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
   border-radius: 50%;
   background: #1a73e8;
   margin: 0 14px;
-  box-shadow: 0 0 10px rgba(26,115,232,0.35);
+  box-shadow: 0 0 10px rgba(26,115,232,0.35),
+              var(--shadow-x, 0px) var(--shadow-y, 0px) 0 rgba(26,115,232,0.3);
 }
 .rw-desc {
   font-size: clamp(1.1rem,2.5vw,1.3rem);
   color: #6b7280;
   margin: 0 0 48px;
   line-height: 1.75;
+  text-shadow: var(--shadow-x, 0px) var(--shadow-y, 0px) 0 rgba(26,115,232,0.15);
   animation: fadeUp 0.7s 0.3s cubic-bezier(0.22,0.61,0.36,1) both;
 }
 
 /* ===== 圈内深色样式 ===== */
 .rw-dark {
   color: #fff !important;
+  text-shadow: var(--shadow-x, 0px) var(--shadow-y, 0px) 0 rgba(255,255,255,0.2) !important;
   animation: none !important;
   opacity: 1 !important;
   transform: none !important;
@@ -297,10 +302,12 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
 .reveal-body .rw-divider::before,
 .reveal-body .rw-divider::after {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  filter: drop-shadow(var(--shadow-x, 0px) var(--shadow-y, 0px) 0 rgba(255,255,255,0.15));
 }
 .reveal-body .rw-dot {
   background: #fff;
-  box-shadow: 0 0 12px rgba(255,255,255,0.3);
+  box-shadow: 0 0 12px rgba(255,255,255,0.3),
+              var(--shadow-x, 0px) var(--shadow-y, 0px) 0 rgba(255,255,255,0.3);
 }
 
 @keyframes fadeUp {
@@ -336,10 +343,12 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
 
 .home.dark .rw-sub {
   color: #a0a0a0;
+  text-shadow: var(--shadow-x, 0px) var(--shadow-y, 0px) 0 rgba(255,255,255,0.1);
 }
 
 .home.dark .rw-desc {
   color: #888888;
+  text-shadow: var(--shadow-x, 0px) var(--shadow-y, 0px) 0 rgba(255,255,255,0.08);
 }
 
 .home.dark .pattern-char {
@@ -377,12 +386,14 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
 
 .home.dark .reveal-layer .rw-dot {
   background: #1a73e8;
-  box-shadow: 0 0 10px rgba(26,115,232,0.35);
+  box-shadow: 0 0 10px rgba(26,115,232,0.35),
+              var(--shadow-x, 0px) var(--shadow-y, 0px) 0 rgba(26,115,232,0.3);
 }
 
 .home.dark .reveal-layer .rw-divider::before,
 .home.dark .reveal-layer .rw-divider::after {
   background: linear-gradient(90deg, transparent, rgba(0,0,0,0.15), transparent);
+  filter: drop-shadow(var(--shadow-x, 0px) var(--shadow-y, 0px) 0 rgba(0,0,0,0.1));
 }
 
 .home.dark .bg-glow--top {
