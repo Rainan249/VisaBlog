@@ -9,6 +9,7 @@ el.style.cssText = `
   background:#1a73e8;
   box-shadow:0 0 10px rgba(26,115,232,0.5);
   transform:translate(-50%,-50%);
+  transition:opacity 0.3s ease;
 `;
 
 let origCursor = "";
@@ -16,6 +17,7 @@ let origCursor = "";
 function onMouseMove(e: MouseEvent) {
   el.style.left = e.clientX + "px";
   el.style.top = e.clientY + "px";
+  el.style.opacity = document.body.classList.contains("reveal-active") ? "0" : "1";
 }
 
 onMounted(() => {

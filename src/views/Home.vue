@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import { useTheme } from "../lib/useTheme";
+import CursorTrail from "../components/CursorTrail.vue";
 
 const RADIUS = 147;
 const EXPAND_DURATION = 500; // ms
@@ -90,6 +91,7 @@ function onMouseMove(e: MouseEvent) {
   // 光标在导航栏区域时，收起圆圈
   if (e.clientY < rect.top) {
     if (insideHome) startCollapse();
+    document.body.classList.remove("reveal-active");
     return;
   }
 
@@ -101,6 +103,7 @@ function onMouseMove(e: MouseEvent) {
   // 进入 home 区域时触发展开动画
   if (!insideHome) {
     startExpand(x, y);
+    document.body.classList.add("reveal-active");
   } else if (!animating) {
     applyClip(x, y, RADIUS);
   }
@@ -132,6 +135,7 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
 </script>
 
 <template>
+  <CursorTrail />
   <div ref="homeRef" class="home" :class="{ dark: isDark }">
     <div class="bg-glow bg-glow--top" data-speed="0.03" />
     <div class="bg-glow bg-glow--bottom" data-speed="0.02" />
@@ -179,6 +183,15 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
   padding: 80px 24px 100px;
   overflow: hidden;
   background: linear-gradient(175deg, #fafbfd 0%, #f2f5fa 40%, #fafbfd 100%);
+}
+
+.home.reveal-active {
+  cursor: none;
+}
+
+.home.reveal-active a,
+.home.reveal-active button {
+  cursor: pointer;
 }
 
 /* ===== 光晕 ===== */

@@ -12,7 +12,7 @@ let lastAdd = 0;
 
 function initCanvas() {
   canvas = document.createElement("canvas");
-  canvas.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:9999;";
+  canvas.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:9999;transition:opacity 0.3s ease;";
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   document.body.appendChild(canvas);
@@ -29,6 +29,9 @@ function addPoint(x: number, y: number) {
 
 function draw() {
   if (!ctx || !canvas) return;
+
+  // HOME 页大圈显示时隐藏光标轨迹
+  canvas.style.opacity = document.body.classList.contains("reveal-active") ? "0" : "1";
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
