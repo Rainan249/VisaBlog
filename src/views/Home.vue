@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted } from "vue";
 import { useTheme } from "../lib/useTheme";
 
 const RADIUS = 147;
+const EXPAND_DURATION = 500; // ms
 
 const homeRef = ref<HTMLElement | null>(null);
 const heroRef = ref<HTMLElement | null>(null);
@@ -10,8 +11,74 @@ const revealRef = ref<HTMLElement | null>(null);
 
 const { isDark } = useTheme();
 
-function circle(posX: number, posY: number, r: number) {
-  return `circle(${r}px at ${posX}px ${posY}px)`;
+// 动画状态
+let currentRadius = 0;
+let targetRadius = 0;
+let animating = false;
+let animStart = 0;
+let animFrom = 0;
+let lastX = 0;
+let lastY = 0;
+let insideHome = false;
+
+function easeOutExpo(t: number) {
+  return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+}
+
+function circle(x: number, y: number, r: number) {
+  return `circle(${r}px at ${x}px ${y}px)`;
+}
+
+function applyClip(x: number, y: number, r: number) {
+  if (revealRef.value) {
+    revealRef.value.style.clipPath = circle(x, y, r);
+  }
+}
+
+function animateRadius() {
+  if (!animating) return;
+  const elapsed = performance.now() - animStart;
+  const progress = Math.min(elapsed / EXPAND_DURATION, 1);
+  currentRadius = animFrom + (targetRadius - animFrom) * easeOutExpo(progress);
+  applyClip(lastX, lastY, currentRadius);
+
+  if (progress < 1) {
+    requestAnimationFrame(animateRadius);
+  } else {
+    animating = false;
+    currentRadius = targetRadius;
+  }
+}
+
+function startExpand(x: number, y: number) {
+  lastX = x;
+  lastY = y;
+  if (!insideHome) {
+    insideHome = true;
+    // 从 0 展开到 RADIUS
+    animFrom = 0;
+    targetRadius = RADIUS;
+    animStart = performance.now();
+    if (!animating) {
+      animating = true;
+      requestAnimationFrame(animateRadius);
+    }
+  } else {
+    // 已经在 home 内，直接跟随
+    currentRadius = RADIUS;
+    applyClip(x, y, RADIUS);
+  }
+}
+
+function startCollapse() {
+  insideHome = false;
+  animFrom = currentRadius;
+  targetRadius = 0;
+  animStart = performance.now();
+  if (!animating) {
+    animating = true;
+    requestAnimationFrame(animateRadius);
+  }
 }
 
 function onMouseMove(e: MouseEvent) {
@@ -20,18 +87,22 @@ function onMouseMove(e: MouseEvent) {
 
   const rect = home.getBoundingClientRect();
 
-  // 光标在导航栏区域时，隐藏
+  // 光标在导航栏区域时，收起圆圈
   if (e.clientY < rect.top) {
-    if (revealRef.value) revealRef.value.style.clipPath = circle(0, 0, 0);
+    if (insideHome) startCollapse();
     return;
   }
 
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
+  lastX = x;
+  lastY = y;
 
-  // 圈瞬间跟随光标
-  if (revealRef.value) {
-    revealRef.value.style.clipPath = circle(x, y, RADIUS);
+  // 进入 home 区域时触发展开动画
+  if (!insideHome) {
+    startExpand(x, y);
+  } else if (!animating) {
+    applyClip(x, y, RADIUS);
   }
 
   // Tilt/parallax on hero — tilt toward mouse direction
@@ -44,7 +115,6 @@ function onMouseMove(e: MouseEvent) {
     const dy = (e.clientY - cy) / 30;
     hero.style.setProperty("--tilt-x", `${dy}deg`);
     hero.style.setProperty("--tilt-y", `${-dx}deg`);
-    // 阴影偏移比文字倾斜幅度大（4x），产生影子拖曳效果
     hero.style.setProperty("--shadow-x", `${-dx * 4}px`);
     hero.style.setProperty("--shadow-y", `${-dy * 4}px`);
   }
@@ -196,11 +266,12 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
   pointer-events: none;
   clip-path: circle(0px at 0px 0px);
   will-change: clip-path;
-  background: #161618;
+  background: linear-gradient(135deg, #161618 0%, #1a1a2e 50%, #161618 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 80px 24px 100px; /* matches .home */
+  transition: background 0.6s ease;
 }
 
 .reveal-pattern {
@@ -375,7 +446,7 @@ onUnmounted(() => window.removeEventListener("mousemove", onMouseMove));
 }
 
 .home.dark .reveal-layer {
-  background: #fafbfd;
+  background: linear-gradient(135deg, #fafbfd 0%, #f0f2f5 50%, #fafbfd 100%);
 }
 
 .home.dark .reveal-layer .rw-title,
