@@ -72,6 +72,7 @@ const activeId = ref<string>("");
 const collapsedGroups = ref<Set<string>>(new Set());
 const contentRef = ref<HTMLElement | null>(null);
 const tocRef = ref<HTMLElement | null>(null);
+const tocNavRef = ref<HTMLElement | null>(null);
 let observer: IntersectionObserver | null = null;
 
 /** Extract h1/h2/h3 headings from the rendered content and assign IDs. */
@@ -341,18 +342,24 @@ onUnmounted(() => {
 
 // Auto-scroll sidebar to center the active item
 watch(activeId, (id) => {
-  if (!id || !tocRef.value) return;
-  const link = tocRef.value.querySelector(`[href="#${id}"]`) as HTMLElement | null;
+  if (!id || !tocNavRef.value) return;
+  const link = tocNavRef.value.querySelector(`[href="#${id}"]`) as HTMLElement | null;
   if (!link) return;
 
-  const container = tocRef.value;
+  const container = tocNavRef.value;
   const linkRect = link.getBoundingClientRect();
   const containerRect = container.getBoundingClientRect();
+  const nextScrollTop =
+    container.scrollTop +
+    linkRect.top -
+    containerRect.top -
+    container.clientHeight / 2 +
+    linkRect.height / 2;
 
-  if (linkRect.top < containerRect.top || linkRect.bottom > containerRect.bottom) {
-    container.scrollTop +=
-      linkRect.top - containerRect.top - containerRect.height / 2 + linkRect.height / 2;
-  }
+  container.scrollTo({
+    top: Math.max(0, nextScrollTop),
+    behavior: "smooth",
+  });
 });
 </script>
 
@@ -406,7 +413,7 @@ watch(activeId, (id) => {
         </div>
       </div>
 
-      <nav>
+      <nav ref="tocNavRef">
         <ul class="toc-list">
           <template v-for="item in tocItems" :key="item.id">
             <li :class="['toc-group', 'toc-group--h' + item.level]">
