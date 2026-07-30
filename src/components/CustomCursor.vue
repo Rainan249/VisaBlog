@@ -17,7 +17,7 @@ let origCursor = "";
 function onMouseMove(e: MouseEvent) {
   el.style.left = e.clientX + "px";
   el.style.top = e.clientY + "px";
-  el.style.opacity = document.body.classList.contains("reveal-active") ? "0" : "1";
+  el.style.opacity = "1";
 }
 
 onMounted(() => {
