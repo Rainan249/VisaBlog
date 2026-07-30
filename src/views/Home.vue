@@ -523,6 +523,7 @@ onUnmounted(() => {
 
 .featured-heading {
   display: flex;
+  align-self: flex-start;
   align-items: center;
   gap: 10px;
   margin-bottom: 12px;
@@ -557,6 +558,9 @@ onUnmounted(() => {
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .home-about-section,
@@ -565,11 +569,13 @@ onUnmounted(() => {
 }
 
 .home-about-text {
-  max-width: 760px;
-  margin-top: 24px;
+  width: fit-content;
+  max-width: min(760px, 100%);
+  margin: 24px auto 0;
   color: #666;
   font-size: 1.14rem;
   line-height: 1.9;
+  text-align: left;
 }
 
 .home-about-text p {
@@ -580,6 +586,8 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
+  width: min(860px, 100%);
+  margin: 0 auto;
 }
 
 .featured-card {
@@ -591,6 +599,7 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.72);
   box-shadow: 0 20px 60px rgba(26, 115, 232, 0.08);
   color: inherit;
+  text-align: center;
   text-decoration: none;
   backdrop-filter: blur(20px);
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
@@ -619,6 +628,7 @@ onUnmounted(() => {
 .featured-tags {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
   margin-top: auto;
 }
@@ -633,7 +643,7 @@ onUnmounted(() => {
 }
 
 @media (max-width: 900px) {
-  .featured-grid { grid-template-columns: 1fr; }
+  .featured-grid { grid-template-columns: 1fr; margin: 0 auto; }
 }
 
 /* ===== 响应式 ===== */
