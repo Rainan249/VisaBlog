@@ -222,18 +222,25 @@ onUnmounted(() => {
     <section class="home-featured">
       <div class="featured-shell">
         <article class="home-lower-block home-about-section">
-          <p class="featured-kicker">ABOUT</p>
+          <div class="featured-heading">
+            <span class="featured-line" aria-hidden="true" />
+            <p class="featured-kicker">ABOUT</p>
+          </div>
           <div class="home-about-text">
-            <p>Self-taught Developer &amp; Occasional Writer</p>
-            <p>Interested in building useful things with code.</p>
-            <p>Currently exploring RAG, AI Agent, Large Language Model, and knowledge engineering.</p>
-            <p>This site is a collection of notes, projects, experiments, and things I've learned along the way.</p>
-            <p>Nothing fancy — just documenting the journey. So, Life is code. I will debug it.</p>
+            <p>Software Engineering Student &amp; AI Programming Beginner</p>
+            <p>Passionate about creation and building systematic knowledge.</p>
+            <p>Currently learning machine learning and deep learning.</p>
+            <p>This site collects my personal notes, creations and insights.</p>
+            <p>No fancy decorations, merely documenting my growth.</p>
+            <p>Life is code. I will debug it.</p>
           </div>
         </article>
 
         <article class="home-lower-block home-recent-section">
-          <p class="featured-kicker">RECENT</p>
+          <div class="featured-heading">
+            <span class="featured-line" aria-hidden="true" />
+            <p class="featured-kicker">RECENT</p>
+          </div>
           <div class="featured-grid">
             <a
               v-for="post in featuredPosts"
@@ -514,12 +521,26 @@ onUnmounted(() => {
   margin: 0 auto;
 }
 
+.featured-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.featured-line {
+  width: 3px;
+  height: 20px;
+  border-radius: 999px;
+  background: #1a73e8;
+}
+
 .featured-kicker {
-  margin: 0 0 12px;
+  margin: 0;
   color: #1a73e8;
-  font-size: 1rem;
+  font-size: 1.22rem;
   font-weight: 800;
-  letter-spacing: 0.24em;
+  letter-spacing: 0;
 }
 
 .featured-shell h2 {
@@ -532,12 +553,10 @@ onUnmounted(() => {
 
 .home-lower-block {
   position: relative;
-  border: 1px solid rgba(26, 115, 232, 0.12);
-  border-radius: 32px;
   padding: 32px;
-  background: rgba(255, 255, 255, 0.48);
-  box-shadow: 0 24px 80px rgba(26, 115, 232, 0.08);
-  backdrop-filter: blur(22px);
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .home-about-section,
@@ -549,8 +568,8 @@ onUnmounted(() => {
   max-width: 760px;
   margin-top: 24px;
   color: #666;
-  font-size: 0.95rem;
-  line-height: 1.8;
+  font-size: 1.14rem;
+  line-height: 1.9;
 }
 
 .home-about-text p {
@@ -565,10 +584,10 @@ onUnmounted(() => {
 
 .featured-card {
   position: relative;
-  min-height: 220px;
-  padding: 24px;
+  min-height: 150px;
+  padding: 14px;
   border: 1px solid rgba(26, 115, 232, 0.12);
-  border-radius: 28px;
+  border-radius: 20px;
   background: rgba(255, 255, 255, 0.72);
   box-shadow: 0 20px 60px rgba(26, 115, 232, 0.08);
   color: inherit;
@@ -586,15 +605,15 @@ onUnmounted(() => {
 
 .featured-date {
   color: #1a73e8;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
 .featured-card h3 {
-  margin: 18px 0 24px;
+  margin: 10px 0 14px;
   color: #262628;
-  font-size: 1.12rem;
-  line-height: 1.35;
+  font-size: 1.24rem;
+  line-height: 1.3;
 }
 
 .featured-tags {
@@ -605,11 +624,11 @@ onUnmounted(() => {
 }
 
 .featured-tags span {
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 999px;
   background: rgba(26, 115, 232, 0.08);
   color: #1a73e8;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 600;
 }
 
@@ -630,8 +649,9 @@ onUnmounted(() => {
   .home-featured { padding: 72px 20px 88px; }
   .home-lower-block { padding: 22px; border-radius: 24px; }
   .home-recent-section { margin-top: 36px; }
-  .home-about-text { font-size: 0.92rem; }
-  .featured-card { min-height: auto; }
+  .home-about-text { font-size: 1.06rem; }
+  .featured-date { font-size: 0.9rem; }
+  .featured-card h3 { font-size: 1.22rem; }
 }
 @media (max-width: 380px) {
   .rw-title { font-size: 2rem; }
@@ -719,6 +739,10 @@ onUnmounted(() => {
   color: #4a9eff;
 }
 
+.home-page.dark .featured-line {
+  background: #4a9eff;
+}
+
 .home-page.dark .featured-shell h2 {
   color: #e0e0e0;
 }
@@ -728,9 +752,8 @@ onUnmounted(() => {
 }
 
 .home-page.dark .home-lower-block {
-  border-color: rgba(74, 158, 255, 0.16);
-  background: rgba(34, 34, 36, 0.48);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
+  background: transparent;
+  box-shadow: none;
 }
 
 .home-page.dark .home-about-text {
