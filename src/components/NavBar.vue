@@ -19,7 +19,7 @@ function toggleTheme() {
 <template>
   <nav class="navbar">
     <div class="nav-inner">
-      <router-link to="/" class="nav-logo">Rainan's Blog</router-link>
+      <router-link :to="{ name: 'home' }" class="nav-logo">Rainan's Blog</router-link>
       <div class="nav-right">
         <div class="nav-links">
           <router-link
