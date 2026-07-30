@@ -906,6 +906,7 @@ watch(activeId, (id) => {
   overflow-y: auto;
   scrollbar-gutter: stable;
   overscroll-behavior: contain;
+  padding: 8px 0 16px;
 }
 
 /* ---------- Header (title + counter + actions) ---------- */
