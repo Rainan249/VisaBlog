@@ -71,7 +71,6 @@ const tocItems = ref<TocItem[]>([]);
 const activeId = ref<string>("");
 const collapsedGroups = ref<Set<string>>(new Set());
 const contentRef = ref<HTMLElement | null>(null);
-const tocRef = ref<HTMLElement | null>(null);
 const tocNavRef = ref<HTMLElement | null>(null);
 let observer: IntersectionObserver | null = null;
 
@@ -371,7 +370,7 @@ watch(activeId, (id) => {
     v-if="post"
   >
     <!-- Desktop Sidebar Table of Contents (left side) -->
-    <aside ref="tocRef" class="toc-sidebar" v-if="tocItems.length > 0">
+    <aside class="toc-sidebar" v-if="tocItems.length > 0">
       <!-- Title row with progress & expand/collapse -->
       <div class="toc-header">
         <div class="toc-header-top">
