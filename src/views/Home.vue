@@ -10,6 +10,7 @@ const EXPAND_DURATION = 500; // ms
 const START_DATE = "2026-07-16T14:30:00";
 
 const homeRef = ref<HTMLElement | null>(null);
+const pageRef = ref<HTMLElement | null>(null);
 const heroRef = ref<HTMLElement | null>(null);
 const revealRef = ref<HTMLElement | null>(null);
 
@@ -102,6 +103,7 @@ function updateTime() {
 }
 
 let timer: ReturnType<typeof setInterval> | null = null;
+let isSectionScrolling = false;
 
 function onMouseMove(e: MouseEvent) {
   lastClientX = e.clientX;
@@ -112,6 +114,33 @@ function onMouseMove(e: MouseEvent) {
 function onScroll() {
   if (lastClientX < 0 || lastClientY < 0) return;
   updateHeroInteraction(lastClientX, lastClientY);
+}
+
+function onWheel(e: WheelEvent) {
+  const page = pageRef.value;
+  if (!page || isSectionScrolling) return;
+
+  const maxScroll = page.scrollHeight - page.clientHeight;
+  if (maxScroll <= 0) return;
+
+  const atTop = page.scrollTop < 40;
+  const atBottom = page.scrollTop > maxScroll - 40;
+
+  if (e.deltaY > 0 && atTop) {
+    e.preventDefault();
+    isSectionScrolling = true;
+    page.scrollTo({ top: page.clientHeight, behavior: "smooth" });
+    window.setTimeout(() => {
+      isSectionScrolling = false;
+    }, 1300);
+  } else if (e.deltaY < 0 && atBottom) {
+    e.preventDefault();
+    isSectionScrolling = true;
+    page.scrollTo({ top: 0, behavior: "smooth" });
+    window.setTimeout(() => {
+      isSectionScrolling = false;
+    }, 1300);
+  }
 }
 
 function updateHeroInteraction(clientX: number, clientY: number) {
@@ -170,20 +199,24 @@ function updateHeroInteraction(clientX: number, clientY: number) {
 onMounted(() => {
   updateTime();
   timer = setInterval(updateTime, 1000);
+  const page = pageRef.value;
   window.addEventListener("mousemove", onMouseMove, { passive: true });
-  window.addEventListener("scroll", onScroll, { passive: true });
+  page?.addEventListener("scroll", onScroll, { passive: true });
+  page?.addEventListener("wheel", onWheel, { passive: false });
 });
 onUnmounted(() => {
   if (timer) clearInterval(timer);
   document.body.classList.remove("reveal-active");
+  const page = pageRef.value;
   window.removeEventListener("mousemove", onMouseMove);
-  window.removeEventListener("scroll", onScroll);
+  page?.removeEventListener("scroll", onScroll);
+  page?.removeEventListener("wheel", onWheel);
 });
 </script>
 
 <template>
   <CursorTrail />
-  <main class="home-page" :class="{ dark: isDark }">
+  <main ref="pageRef" class="home-page" :class="{ dark: isDark }">
     <section ref="homeRef" class="home home-hero">
       <div class="bg-glow bg-glow--top" data-speed="0.03" />
       <div class="bg-glow bg-glow--bottom" data-speed="0.02" />
@@ -265,7 +298,12 @@ onUnmounted(() => {
 /* ===== 容器 ===== */
 .home-page {
   background: linear-gradient(175deg, #fafbfd 0%, #f2f5fa 40%, #fafbfd 100%);
-  min-height: calc(100vh - 56px);
+  height: calc(100vh - 56px);
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .home {
@@ -276,6 +314,8 @@ onUnmounted(() => {
   justify-content: center;
   padding: 80px 24px 100px;
   overflow: hidden;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .home.reveal-active {
@@ -498,8 +538,11 @@ onUnmounted(() => {
   min-height: calc(100vh - 56px);
   display: flex;
   align-items: center;
-  padding: 96px 24px 120px;
+  justify-content: center;
+  padding: 64px 24px 120px;
   overflow: hidden;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .home-featured::before {
@@ -523,6 +566,7 @@ onUnmounted(() => {
 
 .featured-heading {
   display: flex;
+  justify-content: flex-end;
   align-items: center;
   gap: 10px;
   margin: 4px 0 0;
@@ -559,7 +603,7 @@ onUnmounted(() => {
   box-shadow: none;
   backdrop-filter: none;
   display: grid;
-  grid-template-columns: max-content minmax(0, 600px);
+  grid-template-columns: 88px minmax(0, 600px);
   justify-content: center;
   align-items: start;
   gap: 18px;
@@ -568,7 +612,7 @@ onUnmounted(() => {
 
 .home-about-section,
 .home-recent-section {
-  margin-top: 48px;
+  margin-top: 32px;
 }
 
 .home-about-text {
@@ -658,7 +702,7 @@ onUnmounted(() => {
   .rw-divider::before, .rw-divider::after { width: 24px; }
   .text-pattern { opacity: 0.035; }
   .reveal-layer { display: none; }
-  .home-featured { padding: 72px 20px 88px; }
+  .home-featured { padding: 56px 20px 88px; }
   .home-lower-block {
     grid-template-columns: 1fr;
     gap: 12px;
@@ -667,7 +711,7 @@ onUnmounted(() => {
     transform: none;
   }
   .featured-heading { transform: none; }
-  .home-recent-section { margin-top: 36px; }
+  .home-recent-section { margin-top: 24px; }
   .home-about-text { font-size: 1.12rem; }
   .featured-date { font-size: 0.9rem; }
   .featured-card h3 { font-size: 1.22rem; }
