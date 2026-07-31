@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import CursorTrail from "../components/CursorTrail.vue";
 
 onMounted(() => {
@@ -25,14 +25,6 @@ function openPreview(img: string, images: string[]) {
 function closePreview() {
   selectedImage.value = null;
   document.body.style.overflow = "";
-}
-
-function togglePreview(img: string, images: string[]) {
-  if (selectedImage.value) {
-    closePreview();
-  } else {
-    openPreview(img, images);
-  }
 }
 
 function scrollToCategory(name: string) {
