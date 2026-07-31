@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { getAllPosts } from "../lib/posts";
 import type { PostMeta } from "../lib/posts";
 import CursorTrail from "../components/CursorTrail.vue";
+
+onMounted(() => {
+  document.title = "BLOG · Rainan's ink";
+});
 
 const allPosts = getAllPosts() as PostMeta[];
 const activeTag = ref("");

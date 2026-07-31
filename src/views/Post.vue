@@ -12,7 +12,7 @@ const slug = route.params.slug as string;
 const post = getPostBySlug(slug);
 
 if (post) {
-  document.title = post.title;
+  document.title = `${post.title} · Rainan's ink`;
 }
 
 // 处理 Obsidian 的 ![[file.png]] 图片语法 → 标准 markdown

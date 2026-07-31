@@ -6,6 +6,10 @@ import avatar from "../assets/头像.jpg";
 const START_DATE = "2026-07-16T14:30:00";
 const timeText = ref("");
 
+onMounted(() => {
+  document.title = "ABOUT · Rainan's ink";
+});
+
 function updateTime() {
   const start = new Date(START_DATE).getTime();
   const diff = Date.now() - start;

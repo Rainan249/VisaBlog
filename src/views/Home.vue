@@ -257,6 +257,7 @@ function updateHeroInteraction(clientX: number, clientY: number) {
 }
 
 onMounted(() => {
+  document.title = "HOME · Rainan's ink";
   updateTime();
   timer = setInterval(updateTime, 1000);
   const page = pageRef.value;
@@ -335,6 +336,12 @@ onUnmounted(() => {
         <div class="rw-divider"><span class="rw-dot" /></div>
         <p class="rw-desc">This is my blog，nice to meet you!</p>
       </section>
+
+      <div class="scroll-hint">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M7 13l5 5 5-5M7 6l5 5 5-5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
     </section>
 
     <section ref="featuredRef" class="home-featured" :class="{ 'visible': isBottomVisible }">
@@ -395,7 +402,7 @@ onUnmounted(() => {
             <div class="education-info">
               <h3 class="education-school">Jiangsu University of Science and Technology</h3>
               <p class="education-major">Software Engineering</p>
-              <p class="education-date">September 2022 - Present</p>
+              <p class="education-date">September 2024 - Present</p>
             </div>
             <div class="education-logo-wrapper">
               <img src="../assets/校徽.png" alt="校徽" class="education-logo" />
@@ -626,6 +633,21 @@ onUnmounted(() => {
   line-height: 1.75;
   text-shadow: var(--shadow-x, 0px) var(--shadow-y, 0px) 0 rgba(26,115,232,0.15);
   animation: fadeUp 0.7s 0.3s cubic-bezier(0.22,0.61,0.36,1) both;
+}
+
+.scroll-hint {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(26, 115, 232, 0.3);
+  animation: scrollBounce 2s ease-in-out infinite;
+  z-index: 3;
+}
+
+@keyframes scrollBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.4; }
+  50% { transform: translateX(-50%) translateY(6px); opacity: 0.7; }
 }
 
 /* ===== 圈内深色样式 ===== */
