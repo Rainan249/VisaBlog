@@ -65,7 +65,7 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 // 扫描 src/assets/gallery 目录下的所有图片
-const imageModules = import.meta.glob("/src/assets/gallery/**/*.{jpg,jpeg,png,gif,svg,webp}", {
+const imageModules = import.meta.glob("../assets/gallery/**/*.{jpg,jpeg,png,gif,svg,webp}", {
   eager: true,
   import: "default",
 });
@@ -75,15 +75,15 @@ const categories = computed(() => {
   const groupMap = new Map<string, Map<string, string[]>>();
 
   for (const path of Object.keys(imageModules)) {
+    // 路径格式: ../assets/gallery/摄影/素材/xxx.jpg
     const parts = path.split("/").filter(Boolean);
-    // parts: ["src", "assets", "gallery", "摄影", "素材", "xxx.jpg"]
-    // 或: ["src", "assets", "gallery", "绘画", "xxx.jpg"]
+    // parts: ["..", "assets", "gallery", "摄影", "素材", "xxx.jpg"]
 
     if (parts.length >= 5) {
       const mainFolder = parts[3]; // 主分类
 
       if (parts.length >= 6) {
-        // 有子文件夹: /gallery/摄影/素材/xxx.jpg
+        // 有子文件夹: ../assets/gallery/摄影/素材/xxx.jpg
         const subFolder = parts[4];
         if (!groupMap.has(mainFolder)) {
           groupMap.set(mainFolder, new Map());
@@ -94,7 +94,7 @@ const categories = computed(() => {
         }
         subMap.get(subFolder)!.push(path);
       } else {
-        // 没有子文件夹: /gallery/绘画/xxx.jpg
+        // 没有子文件夹: ../assets/gallery/绘画/xxx.jpg
         if (!groupMap.has(mainFolder)) {
           groupMap.set(mainFolder, new Map());
         }
