@@ -6,9 +6,80 @@ import path from "node:path";
 
 const IMG_DIR = "03 - resources/小小储物袋/Picture";
 
+// 扫描 public/gallery 目录，自动生成 gallery 数据
+function scanGalleryData(): { name: string; subcategories: { name: string; images: string[] }[] }[] {
+  const galleryDir = path.join(process.cwd(), "public", "gallery");
+  if (!fs.existsSync(galleryDir)) return [];
+
+  const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp"]);
+
+  function isImageFile(file: string): boolean {
+    return IMAGE_EXTS.has(path.extname(file).toLowerCase());
+  }
+
+  const result: { name: string; subcategories: { name: string; images: string[] }[] }[] = [];
+
+  for (const categoryEntry of fs.readdirSync(galleryDir, { withFileTypes: true })) {
+    if (!categoryEntry.isDirectory()) continue;
+    if (categoryEntry.name.startsWith(".")) continue;
+
+    const categoryPath = path.join(galleryDir, categoryEntry.name);
+    const category: { name: string; subcategories: { name: string; images: string[] }[] } = {
+      name: categoryEntry.name,
+      subcategories: [],
+    };
+
+    // 根目录的图片作为 name="" 的子分类
+    const rootImages = fs.readdirSync(categoryPath)
+      .filter((f) => fs.statSync(path.join(categoryPath, f)).isFile() && isImageFile(f))
+      .sort();
+    if (rootImages.length > 0) {
+      category.subcategories.push({
+        name: "",
+        images: rootImages.map((f) => `/gallery/${categoryEntry.name}/${f}`),
+      });
+    }
+
+    // 子目录
+    for (const subEntry of fs.readdirSync(categoryPath, { withFileTypes: true })) {
+      if (!subEntry.isDirectory()) continue;
+      if (subEntry.name.startsWith(".")) continue;
+
+      const subPath = path.join(categoryPath, subEntry.name);
+      const images = fs.readdirSync(subPath)
+        .filter((f) => fs.statSync(path.join(subPath, f)).isFile() && isImageFile(f))
+        .sort();
+
+      if (images.length > 0) {
+        category.subcategories.push({
+          name: subEntry.name,
+          images: images.map((f) => `/gallery/${categoryEntry.name}/${subEntry.name}/${f}`),
+        });
+      }
+    }
+
+    if (category.subcategories.length > 0) {
+      result.push(category);
+    }
+  }
+
+  return result;
+}
+
 export default defineConfig({
   plugins: [
     vue(),
+    {
+      name: "virtual-gallery-data",
+      resolveId(id) {
+        if (id === "virtual:gallery-data") return "\0" + id;
+      },
+      load(id) {
+        if (id === "\0virtual:gallery-data") {
+          return `export default ${JSON.stringify(scanGalleryData())}`;
+        }
+      },
+    },
     {
       name: "md-create-times",
       resolveId(id) {

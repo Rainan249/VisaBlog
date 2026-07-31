@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import CursorTrail from "../components/CursorTrail.vue";
+import galleryData from "virtual:gallery-data";
 
 onMounted(() => {
   document.title = "GALLERY · Rainan's ink";
@@ -14,24 +15,6 @@ onUnmounted(() => {
 const selectedImage = ref<string | null>(null);
 const selectedIndex = ref(0);
 const currentCategoryImages = ref<string[]>([]);
-
-// 静态配置：图片放在 public/gallery/ 目录下
-// 新增图片时，只需在对应分类的 images 数组中添加路径即可
-const galleryData = [
-  {
-    name: "摄影",
-    subcategories: [
-      { name: "JUST", images: ["/gallery/摄影/JUST/校徽.png"] },
-      { name: "YRH", images: ["/gallery/摄影/YRH/校徽.png"] },
-    ],
-  },
-  {
-    name: "绘画",
-    subcategories: [
-      { name: "素材", images: ["/gallery/绘画/素材/img.png", "/gallery/绘画/素材/校徽.png"] },
-    ],
-  },
-];
 
 function openPreview(img: string, images: string[]) {
   selectedImage.value = img;
