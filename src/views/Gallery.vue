@@ -15,6 +15,61 @@ const selectedImage = ref<string | null>(null);
 const selectedIndex = ref(0);
 const currentCategoryImages = ref<string[]>([]);
 
+// 使用 @ 别名扫描 src/assets/gallery 目录下的所有图片
+const imageModules = import.meta.glob("@/../assets/gallery/**/*.{jpg,jpeg,png,gif,svg,webp}", {
+  eager: true,
+  import: "default",
+});
+
+// 按文件夹分组（支持二级分类）
+const categories = computed(() => {
+  const groupMap = new Map<string, Map<string, string[]>>();
+
+  for (const path of Object.keys(imageModules)) {
+    // 路径格式可能是: /src/assets/gallery/... 或 ../assets/gallery/...
+    const galleryMatch = path.match(/gallery\/(.+)/);
+    if (!galleryMatch) continue;
+
+    const remaining = galleryMatch[1]; // 摄影/JUST/校徽.png 或 绘画/素材/img.png
+    const parts = remaining.split("/").filter(Boolean);
+
+    if (parts.length >= 2) {
+      const mainFolder = parts[0]; // 主分类
+
+      if (parts.length >= 3) {
+        // 有子文件夹: 摄影/JUST/xxx.jpg
+        const subFolder = parts[1];
+        if (!groupMap.has(mainFolder)) {
+          groupMap.set(mainFolder, new Map());
+        }
+        const subMap = groupMap.get(mainFolder)!;
+        if (!subMap.has(subFolder)) {
+          subMap.set(subFolder, []);
+        }
+        subMap.get(subFolder)!.push(path);
+      } else {
+        // 没有子文件夹: 绘画/xxx.jpg
+        if (!groupMap.has(mainFolder)) {
+          groupMap.set(mainFolder, new Map());
+        }
+        const subMap = groupMap.get(mainFolder)!;
+        if (!subMap.has("")) {
+          subMap.set("", []);
+        }
+        subMap.get("")!.push(path);
+      }
+    }
+  }
+
+  return Array.from(groupMap.entries()).map(([name, subMap]) => ({
+    name,
+    subcategories: Array.from(subMap.entries()).map(([subName, images]) => ({
+      name: subName,
+      images,
+    })),
+  }));
+});
+
 function openPreview(img: string, images: string[]) {
   selectedImage.value = img;
   currentCategoryImages.value = images;
@@ -63,58 +118,6 @@ function handleKeydown(e: KeyboardEvent) {
       break;
   }
 }
-
-// 扫描 src/assets/gallery 目录下的所有图片
-const imageModules = import.meta.glob("../assets/gallery/**/*.{jpg,jpeg,png,gif,svg,webp}", {
-  eager: true,
-  import: "default",
-});
-
-// 按文件夹分组（支持二级分类）
-const categories = computed(() => {
-  const groupMap = new Map<string, Map<string, string[]>>();
-
-  for (const path of Object.keys(imageModules)) {
-    // 路径格式: ../assets/gallery/摄影/素材/xxx.jpg
-    const parts = path.split("/").filter(Boolean);
-    // parts: ["..", "assets", "gallery", "摄影", "素材", "xxx.jpg"]
-
-    if (parts.length >= 5) {
-      const mainFolder = parts[3]; // 主分类
-
-      if (parts.length >= 6) {
-        // 有子文件夹: ../assets/gallery/摄影/素材/xxx.jpg
-        const subFolder = parts[4];
-        if (!groupMap.has(mainFolder)) {
-          groupMap.set(mainFolder, new Map());
-        }
-        const subMap = groupMap.get(mainFolder)!;
-        if (!subMap.has(subFolder)) {
-          subMap.set(subFolder, []);
-        }
-        subMap.get(subFolder)!.push(path);
-      } else {
-        // 没有子文件夹: ../assets/gallery/绘画/xxx.jpg
-        if (!groupMap.has(mainFolder)) {
-          groupMap.set(mainFolder, new Map());
-        }
-        const subMap = groupMap.get(mainFolder)!;
-        if (!subMap.has("")) {
-          subMap.set("", []);
-        }
-        subMap.get("")!.push(path);
-      }
-    }
-  }
-
-  return Array.from(groupMap.entries()).map(([name, subMap]) => ({
-    name,
-    subcategories: Array.from(subMap.entries()).map(([subName, images]) => ({
-      name: subName,
-      images,
-    })),
-  }));
-});
 </script>
 
 <template>
