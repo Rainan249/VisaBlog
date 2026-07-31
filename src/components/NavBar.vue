@@ -11,6 +11,7 @@ const capsuleRoutes = new Set(["home", "blog", "about"]);
 const links = [
   { path: "/", label: "HOME" },
   { path: "/blog", label: "BLOG" },
+  { path: "/gallery", label: "GALLERY" },
   { path: "/about", label: "ABOUT" },
 ];
 
