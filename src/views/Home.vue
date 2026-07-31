@@ -104,6 +104,7 @@ function updateTime() {
 
 let timer: ReturnType<typeof setInterval> | null = null;
 let isSectionScrolling = false;
+let sectionScrollFrame: number | null = null;
 
 function onMouseMove(e: MouseEvent) {
   lastClientX = e.clientX;
@@ -112,13 +113,58 @@ function onMouseMove(e: MouseEvent) {
 }
 
 function onScroll() {
+  const page = pageRef.value;
+  if (page) {
+    window.dispatchEvent(new CustomEvent("home-scroll", { detail: page.scrollTop }));
+  }
   if (lastClientX < 0 || lastClientY < 0) return;
   updateHeroInteraction(lastClientX, lastClientY);
 }
 
+function scrollToSection(top: number) {
+  const page = pageRef.value;
+  if (!page) return;
+  const scrollEl = page;
+
+  const startTop = scrollEl.scrollTop;
+  const distance = top - startTop;
+  const duration = 900;
+  const startTime = performance.now();
+
+  if (sectionScrollFrame !== null) {
+    cancelAnimationFrame(sectionScrollFrame);
+  }
+
+  isSectionScrolling = true;
+  scrollEl.classList.add("section-scrolling");
+
+  function step(now: number) {
+    const progress = Math.min((now - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    scrollEl.scrollTop = startTop + distance * eased;
+
+    if (progress < 1) {
+      sectionScrollFrame = requestAnimationFrame(step);
+      return;
+    }
+
+    scrollEl.scrollTop = top;
+    scrollEl.classList.remove("section-scrolling");
+    isSectionScrolling = false;
+    sectionScrollFrame = null;
+  }
+
+  sectionScrollFrame = requestAnimationFrame(step);
+}
+
 function onWheel(e: WheelEvent) {
   const page = pageRef.value;
-  if (!page || isSectionScrolling) return;
+  if (!page) return;
+
+  if (isSectionScrolling) {
+    e.preventDefault();
+    return;
+  }
 
   const maxScroll = page.scrollHeight - page.clientHeight;
   if (maxScroll <= 0) return;
@@ -128,18 +174,10 @@ function onWheel(e: WheelEvent) {
 
   if (e.deltaY > 0 && atTop) {
     e.preventDefault();
-    isSectionScrolling = true;
-    page.scrollTo({ top: page.clientHeight, behavior: "smooth" });
-    window.setTimeout(() => {
-      isSectionScrolling = false;
-    }, 1300);
+    scrollToSection(page.clientHeight);
   } else if (e.deltaY < 0 && atBottom) {
     e.preventDefault();
-    isSectionScrolling = true;
-    page.scrollTo({ top: 0, behavior: "smooth" });
-    window.setTimeout(() => {
-      isSectionScrolling = false;
-    }, 1300);
+    scrollToSection(0);
   }
 }
 
@@ -203,9 +241,13 @@ onMounted(() => {
   window.addEventListener("mousemove", onMouseMove, { passive: true });
   page?.addEventListener("scroll", onScroll, { passive: true });
   page?.addEventListener("wheel", onWheel, { passive: false });
+  onScroll();
 });
 onUnmounted(() => {
   if (timer) clearInterval(timer);
+  if (sectionScrollFrame !== null) {
+    cancelAnimationFrame(sectionScrollFrame);
+  }
   document.body.classList.remove("reveal-active");
   const page = pageRef.value;
   window.removeEventListener("mousemove", onMouseMove);
@@ -289,6 +331,17 @@ onUnmounted(() => {
             </a>
           </div>
         </article>
+
+        <article class="home-lower-block home-education-section">
+          <div class="featured-heading">
+            <span class="featured-line" aria-hidden="true" />
+            <p class="featured-kicker">EDUCATION</p>
+          </div>
+          <div class="home-about-text">
+            <p>Jiangsu University of Science and Technology</p>
+            <p>Software Engineering Major</p>
+          </div>
+        </article>
       </div>
     </section>
   </main>
@@ -304,6 +357,11 @@ onUnmounted(() => {
   scroll-snap-type: y mandatory;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
+}
+
+.home-page.section-scrolling {
+  scroll-behavior: auto;
+  scroll-snap-type: none;
 }
 
 .home {
@@ -566,11 +624,10 @@ onUnmounted(() => {
 
 .featured-heading {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: center;
   gap: 10px;
   margin: 4px 0 0;
-  transform: translateX(-24px);
 }
 
 .featured-line {
@@ -603,7 +660,7 @@ onUnmounted(() => {
   box-shadow: none;
   backdrop-filter: none;
   display: grid;
-  grid-template-columns: 88px minmax(0, 600px);
+  grid-template-columns: minmax(0, 600px);
   justify-content: center;
   align-items: start;
   gap: 18px;
@@ -611,6 +668,7 @@ onUnmounted(() => {
 }
 
 .home-about-section,
+.home-education-section,
 .home-recent-section {
   margin-top: 32px;
 }
@@ -710,7 +768,6 @@ onUnmounted(() => {
     border-radius: 24px;
     transform: none;
   }
-  .featured-heading { transform: none; }
   .home-recent-section { margin-top: 24px; }
   .home-about-text { font-size: 1.12rem; }
   .featured-date { font-size: 0.9rem; }

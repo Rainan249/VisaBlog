@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { Sunny, Moon } from "@element-plus/icons-vue";
 import { useTheme } from "../lib/useTheme";
 
 const route = useRoute();
 const { isDark, toggle } = useTheme();
+const isCapsule = ref(false);
+const capsuleRoutes = new Set(["home", "blog", "about"]);
 const links = [
   { path: "/", label: "HOME" },
   { path: "/blog", label: "BLOG" },
@@ -14,10 +17,48 @@ const links = [
 function toggleTheme() {
   toggle();
 }
+
+function updateCapsule(scrollTop: number) {
+  isCapsule.value = capsuleRoutes.has(String(route.name)) && scrollTop > 40;
+}
+
+function updateHomeCapsule(event: Event) {
+  if (route.name !== "home") return;
+  const scrollTop = event instanceof CustomEvent ? Number(event.detail) : 0;
+  updateCapsule(scrollTop);
+}
+
+function updateWindowCapsule() {
+  if (route.name === "home") return;
+  updateCapsule(window.scrollY);
+}
+
+watch(
+  () => route.name,
+  (name) => {
+    if (!capsuleRoutes.has(String(name))) {
+      isCapsule.value = false;
+      return;
+    }
+
+    updateCapsule(name === "home" ? 0 : window.scrollY);
+  }
+);
+
+onMounted(() => {
+  window.addEventListener("home-scroll", updateHomeCapsule);
+  window.addEventListener("scroll", updateWindowCapsule, { passive: true });
+  updateWindowCapsule();
+});
+
+onUnmounted(() => {
+  window.removeEventListener("home-scroll", updateHomeCapsule);
+  window.removeEventListener("scroll", updateWindowCapsule);
+});
 </script>
 
 <template>
-  <nav class="navbar">
+  <nav class="navbar" :class="{ capsule: isCapsule }">
     <div class="nav-inner">
       <router-link :to="{ name: 'home' }" class="nav-logo">Rainan's Blog</router-link>
       <div class="nav-right">
@@ -57,6 +98,13 @@ function toggleTheme() {
   position: sticky;
   top: 0;
   z-index: 100;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.navbar.capsule {
+  height: 56px;
+  background: transparent;
+  border-color: transparent;
 }
 
 .nav-inner {
@@ -67,6 +115,26 @@ function toggleTheme() {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  transition: max-width 0.3s ease, width 0.3s ease, margin 0.3s ease, padding 0.3s ease, height 0.3s ease, border-radius 0.3s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.navbar.capsule .nav-inner {
+  width: min(600px, calc(100% - 32px));
+  max-width: 600px;
+  height: 44px;
+  margin: 6px auto 0;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(26, 115, 232, 0.28);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 16px 40px rgba(26, 115, 232, 0.08);
+}
+
+:global(:root.dark) .navbar.capsule .nav-inner {
+  background: rgba(34, 34, 36, 0.82);
+  border-color: rgba(74, 158, 255, 0.34);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
 }
 
 .nav-logo {
