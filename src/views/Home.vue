@@ -6,7 +6,7 @@ import type { PostMeta } from "../lib/posts";
 import CursorTrail from "../components/CursorTrail.vue";
 
 const RADIUS = 147;
-const EXPAND_DURATION = 500; // ms
+const EXPAND_DURATION = 400; // ms
 const START_DATE = "2026-07-16T14:30:00";
 
 const homeRef = ref<HTMLElement | null>(null);
@@ -16,7 +16,7 @@ const revealRef = ref<HTMLElement | null>(null);
 const featuredRef = ref<HTMLElement | null>(null);
 
 const { isDark } = useTheme();
-const featuredPosts = computed<PostMeta[]>(() => getAllPosts().slice(0, 3));
+const featuredPosts = computed<PostMeta[]>(() => getAllPosts().slice(0, 5));
 const timeText = ref("");
 const scrollProgress = ref(0); // 0 = top, 1 = bottom
 const isBottomVisible = ref(false);
@@ -35,6 +35,15 @@ let insideHome = false;
 
 function easeOutExpo(t: number) {
   return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+}
+
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+  const month = months[date.getMonth()];
+  const day = date.getDate();
+  const year = date.getFullYear();
+  return `${month} ${day}, ${year}`;
 }
 
 function circle(x: number, y: number, r: number) {
@@ -136,7 +145,7 @@ function scrollToSection(top: number) {
 
   const startTop = scrollEl.scrollTop;
   const distance = top - startTop;
-  const duration = 900;
+  const duration = 700;
   const startTime = performance.now();
 
   if (sectionScrollFrame !== null) {
@@ -148,8 +157,10 @@ function scrollToSection(top: number) {
 
   function step(now: number) {
     const progress = Math.min((now - startTime) / duration, 1);
-    // Enhanced easing for smoother transition
-    const eased = 1 - Math.pow(1 - progress, 4);
+    // Smooth cubic bezier easing
+    const eased = progress < 0.5
+      ? 4 * progress * progress * progress
+      : 1 - Math.pow(-2 * progress + 2, 3) / 2;
     scrollEl.scrollTop = startTop + distance * eased;
 
     if (progress < 1) {
@@ -340,6 +351,12 @@ onUnmounted(() => {
             <p>This site collects my personal notes, creations and insights.</p>
             <p>No fancy decorations, merely documenting my growth.</p>
             <p>Life is code. I will debug it.</p>
+            <div class="badge-button-row">
+              <a href="https://codetime.dev" target="_blank" rel="noopener noreferrer">
+                <img src="https://shields.jannchie.com/endpoint?style=flat-square&color=0284c7&url=https%3A%2F%2Fcodetime.dev%2Fv3%2Fusers%2Fshield%3Fuid%3D37245%26label_color%3D334155" alt="CodeTime Badge" />
+              </a>
+              <router-link to="/about" class="more-about-btn">More about me</router-link>
+            </div>
           </div>
         </article>
 
@@ -348,19 +365,24 @@ onUnmounted(() => {
             <span class="featured-line" aria-hidden="true" />
             <p class="featured-kicker">RECENT</p>
           </div>
-          <div class="featured-grid">
+          <div class="featured-list">
             <a
               v-for="post in featuredPosts"
               :key="post.slug"
-              class="featured-card"
+              class="featured-row"
               :href="`/blog/${post.slug}`"
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              <span class="featured-date">{{ post.date }}</span>
-              <h3>{{ post.title }}</h3>
-              <div v-if="post.tags.length" class="featured-tags">
-                <span v-for="tag in post.tags.slice(0, 3)" :key="tag">{{ tag }}</span>
+              <span class="featured-date">{{ formatDate(post.date) }}</span>
+              <h3 class="featured-title">{{ post.title }}</h3>
+              <div v-if="post.tags.length" class="featured-tags-right">
+                <span v-for="tag in post.tags.slice(0, 2)" :key="tag">{{ tag }}</span>
               </div>
             </a>
+          </div>
+          <div class="recent-footer">
+            <router-link to="/blog" class="more-about-btn">More posts</router-link>
           </div>
         </article>
 
@@ -369,9 +391,15 @@ onUnmounted(() => {
             <span class="featured-line" aria-hidden="true" />
             <p class="featured-kicker">EDUCATION</p>
           </div>
-          <div class="home-about-text">
-            <p>Jiangsu University of Science and Technology</p>
-            <p>Software Engineering Major</p>
+          <div class="education-card">
+            <div class="education-info">
+              <h3 class="education-school">Jiangsu University of Science and Technology</h3>
+              <p class="education-major">Software Engineering</p>
+              <p class="education-date">September 2022 - Present</p>
+            </div>
+            <div class="education-logo-wrapper">
+              <img src="../assets/校徽.png" alt="校徽" class="education-logo" />
+            </div>
           </div>
         </article>
       </div>
@@ -394,6 +422,7 @@ onUnmounted(() => {
 .home-page.section-scrolling {
   scroll-behavior: auto;
   scroll-snap-type: none;
+  overscroll-behavior: contain;
 }
 
 .home {
@@ -501,12 +530,13 @@ onUnmounted(() => {
   pointer-events: none;
   clip-path: circle(0px at 0px 0px);
   will-change: clip-path;
+  backface-visibility: hidden;
   background: linear-gradient(135deg, #161618 0%, #1a1a2e 50%, #161618 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 80px 24px 100px; /* matches .home */
-  transition: background 0.6s ease;
+  padding: 80px 24px 100px;
+  transition: background 0.4s ease;
 }
 
 .reveal-pattern {
@@ -539,8 +569,9 @@ onUnmounted(() => {
   width: 100%;
   perspective: 800px;
   transform: rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg));
-  transition: transform 0.1s ease-out;
+  transition: transform 0.08s ease-out;
   will-change: transform;
+  backface-visibility: hidden;
 }
 
 /* ===== 共用文字样式 ===== */
@@ -685,7 +716,7 @@ onUnmounted(() => {
 
 .home-lower-block {
   position: relative;
-  padding: 32px;
+  padding: 24px;
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
@@ -693,35 +724,35 @@ onUnmounted(() => {
   grid-template-columns: minmax(0, 600px);
   justify-content: center;
   align-items: start;
-  gap: 18px;
-  transform: none;
+  gap: 12px;
   opacity: 0;
-  transform: translateY(40px);
-  transition: opacity 0.8s cubic-bezier(0.22, 0.61, 0.36, 1),
-              transform 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transform: translateY(30px) scale(0.98);
+  will-change: transform, opacity;
+  transition: opacity 0.6s cubic-bezier(0.22, 0.61, 0.36, 1),
+              transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .home-featured.visible .home-lower-block {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
 
 .home-featured.visible .home-about-section {
-  transition-delay: 0.1s;
+  transition-delay: 0.05s;
 }
 
 .home-featured.visible .home-recent-section {
-  transition-delay: 0.25s;
+  transition-delay: 0.15s;
 }
 
 .home-featured.visible .home-education-section {
-  transition-delay: 0.4s;
+  transition-delay: 0.25s;
 }
 
 .home-about-section,
 .home-education-section,
 .home-recent-section {
-  margin-top: 32px;
+  margin-top: 0;
 }
 
 .home-about-text {
@@ -737,6 +768,118 @@ onUnmounted(() => {
   margin: 0 0 10px;
 }
 
+.education-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(26, 115, 232, 0.12);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 4px 16px rgba(26, 115, 232, 0.05);
+  overflow: hidden;
+}
+
+.education-info {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.education-school {
+  margin: 0 0 4px;
+  color: #262628;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.education-major {
+  margin: 0 0 4px;
+  color: #666;
+  font-size: 1rem;
+}
+
+.education-date {
+  margin: 0;
+  color: #999;
+  font-size: 0.85rem;
+}
+
+.education-logo-wrapper {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.education-logo {
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+  object-position: center;
+}
+
+.codetime-badge {
+  margin-top: 16px !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.codetime-badge img {
+  height: 22px;
+  vertical-align: middle;
+}
+
+.badge-button-row {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.badge-button-row > a:first-child {
+  align-self: flex-start;
+}
+
+.badge-button-row > a:first-child img {
+  height: 22px;
+  vertical-align: middle;
+}
+
+.more-about-btn {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-end;
+  height: 28px;
+  padding: 0 16px;
+  background: rgba(26, 115, 232, 0.1);
+  color: #1a73e8;
+  border: 1px solid rgba(26, 115, 232, 0.2);
+  border-radius: 14px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.more-about-btn:hover {
+  background: rgba(26, 115, 232, 0.15);
+  border-color: rgba(26, 115, 232, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.15);
+}
+
 .featured-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -745,39 +888,79 @@ onUnmounted(() => {
   margin: 0;
 }
 
-.featured-card {
-  position: relative;
-  min-height: 150px;
-  padding: 14px;
-  border: 1px solid rgba(26, 115, 232, 0.12);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 20px 60px rgba(26, 115, 232, 0.08);
-  color: inherit;
-  text-align: center;
-  text-decoration: none;
-  backdrop-filter: blur(20px);
-  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+.featured-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(600px, 100%);
+  margin: 0;
 }
 
-.featured-card:hover {
-  transform: translateY(-8px);
+.recent-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.featured-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  border: 1px solid rgba(26, 115, 232, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 4px 16px rgba(26, 115, 232, 0.05);
+  color: inherit;
+  text-decoration: none;
+  backdrop-filter: blur(20px);
+  will-change: transform;
+  transition: transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1),
+              border-color 0.2s ease,
+              box-shadow 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.featured-row:hover {
+  transform: translateX(4px);
   border-color: rgba(26, 115, 232, 0.35);
-  box-shadow: 0 28px 80px rgba(26, 115, 232, 0.16);
+  box-shadow: 0 6px 24px rgba(26, 115, 232, 0.12);
   text-decoration: none;
 }
 
 .featured-date {
+  flex-shrink: 0;
+  width: 90px;
   color: #1a73e8;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
 }
 
-.featured-card h3 {
-  margin: 10px 0 14px;
+.featured-title {
+  flex: 1;
+  margin: 0;
   color: #262628;
-  font-size: 1.24rem;
-  line-height: 1.3;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.featured-tags-right {
+  flex-shrink: 0;
+  display: flex;
+  gap: 6px;
+}
+
+.featured-tags-right span {
+  color: #999;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .featured-tags {
@@ -799,6 +982,7 @@ onUnmounted(() => {
 
 @media (max-width: 900px) {
   .featured-grid { grid-template-columns: 1fr; margin: 0 auto; }
+  .featured-list { width: 100%; margin: 0 auto; }
 }
 
 /* ===== 响应式 ===== */
@@ -961,6 +1145,24 @@ onUnmounted(() => {
   color: #a0a0a0;
 }
 
+.home-page.dark .education-card {
+  background: rgba(34, 34, 36, 0.72);
+  border-color: rgba(74, 158, 255, 0.16);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.home-page.dark .education-school {
+  color: #e0e0e0;
+}
+
+.home-page.dark .education-major {
+  color: #a0a0a0;
+}
+
+.home-page.dark .education-date {
+  color: #888;
+}
+
 .home-page.dark .featured-card {
   border-color: rgba(74, 158, 255, 0.16);
   background: rgba(34, 34, 36, 0.72);
@@ -981,6 +1183,26 @@ onUnmounted(() => {
 }
 
 .home-page.dark .featured-tags span {
+  background: rgba(74, 158, 255, 0.1);
+  color: #4a9eff;
+}
+
+.home-page.dark .featured-row {
+  border-color: rgba(74, 158, 255, 0.16);
+  background: rgba(34, 34, 36, 0.72);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.home-page.dark .featured-row:hover {
+  border-color: rgba(74, 158, 255, 0.4);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+
+.home-page.dark .featured-title {
+  color: #e0e0e0;
+}
+
+.home-page.dark .featured-tags-right span {
   background: rgba(74, 158, 255, 0.1);
   color: #4a9eff;
 }
