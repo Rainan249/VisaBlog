@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import CursorTrail from "../components/CursorTrail.vue";
 
 onMounted(() => {
@@ -15,60 +15,23 @@ const selectedImage = ref<string | null>(null);
 const selectedIndex = ref(0);
 const currentCategoryImages = ref<string[]>([]);
 
-// 使用 @ 别名扫描 src/assets/gallery 目录下的所有图片
-const imageModules = import.meta.glob("@/../assets/gallery/**/*.{jpg,jpeg,png,gif,svg,webp}", {
-  eager: true,
-  import: "default",
-});
-
-// 按文件夹分组（支持二级分类）
-const categories = computed(() => {
-  const groupMap = new Map<string, Map<string, string[]>>();
-
-  for (const path of Object.keys(imageModules)) {
-    // 路径格式可能是: /src/assets/gallery/... 或 ../assets/gallery/...
-    const galleryMatch = path.match(/gallery\/(.+)/);
-    if (!galleryMatch) continue;
-
-    const remaining = galleryMatch[1]; // 摄影/JUST/校徽.png 或 绘画/素材/img.png
-    const parts = remaining.split("/").filter(Boolean);
-
-    if (parts.length >= 2) {
-      const mainFolder = parts[0]; // 主分类
-
-      if (parts.length >= 3) {
-        // 有子文件夹: 摄影/JUST/xxx.jpg
-        const subFolder = parts[1];
-        if (!groupMap.has(mainFolder)) {
-          groupMap.set(mainFolder, new Map());
-        }
-        const subMap = groupMap.get(mainFolder)!;
-        if (!subMap.has(subFolder)) {
-          subMap.set(subFolder, []);
-        }
-        subMap.get(subFolder)!.push(path);
-      } else {
-        // 没有子文件夹: 绘画/xxx.jpg
-        if (!groupMap.has(mainFolder)) {
-          groupMap.set(mainFolder, new Map());
-        }
-        const subMap = groupMap.get(mainFolder)!;
-        if (!subMap.has("")) {
-          subMap.set("", []);
-        }
-        subMap.get("")!.push(path);
-      }
-    }
-  }
-
-  return Array.from(groupMap.entries()).map(([name, subMap]) => ({
-    name,
-    subcategories: Array.from(subMap.entries()).map(([subName, images]) => ({
-      name: subName,
-      images,
-    })),
-  }));
-});
+// 静态配置：图片放在 public/gallery/ 目录下
+// 新增图片时，只需在对应分类的 images 数组中添加路径即可
+const galleryData = [
+  {
+    name: "摄影",
+    subcategories: [
+      { name: "JUST", images: ["/gallery/摄影/JUST/校徽.png"] },
+      { name: "YRH", images: ["/gallery/摄影/YRH/校徽.png"] },
+    ],
+  },
+  {
+    name: "绘画",
+    subcategories: [
+      { name: "素材", images: ["/gallery/绘画/素材/img.png", "/gallery/绘画/素材/校徽.png"] },
+    ],
+  },
+];
 
 function openPreview(img: string, images: string[]) {
   selectedImage.value = img;
@@ -128,11 +91,11 @@ function handleKeydown(e: KeyboardEvent) {
       <p>A collection of my works and moments</p>
     </header>
 
-    <div class="gallery-sections" v-if="categories.length > 0">
+    <div class="gallery-sections">
       <!-- 顶部分类导航 -->
       <nav class="category-nav">
         <a
-          v-for="category in categories"
+          v-for="category in galleryData"
           :key="category.name"
           :href="`#${category.name}`"
           class="nav-item"
@@ -142,7 +105,7 @@ function handleKeydown(e: KeyboardEvent) {
         </a>
       </nav>
 
-      <section v-for="category in categories" :key="category.name" class="gallery-section">
+      <section v-for="category in galleryData" :key="category.name" class="gallery-section">
         <h2 class="section-title" :id="category.name">{{ category.name }}</h2>
 
         <template v-for="sub in category.subcategories" :key="sub.name">
@@ -161,10 +124,6 @@ function handleKeydown(e: KeyboardEvent) {
           </div>
         </template>
       </section>
-    </div>
-
-    <div v-else class="empty-state">
-      <p>No photos yet. Add images to src/assets/gallery/[folder]/</p>
     </div>
   </div>
 
