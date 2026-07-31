@@ -13,10 +13,13 @@ const homeRef = ref<HTMLElement | null>(null);
 const pageRef = ref<HTMLElement | null>(null);
 const heroRef = ref<HTMLElement | null>(null);
 const revealRef = ref<HTMLElement | null>(null);
+const featuredRef = ref<HTMLElement | null>(null);
 
 const { isDark } = useTheme();
 const featuredPosts = computed<PostMeta[]>(() => getAllPosts().slice(0, 3));
 const timeText = ref("");
+const scrollProgress = ref(0); // 0 = top, 1 = bottom
+const isBottomVisible = ref(false);
 
 // 动画状态
 let currentRadius = 0;
@@ -115,11 +118,16 @@ function onMouseMove(e: MouseEvent) {
 function onScroll() {
   const page = pageRef.value;
   if (page) {
+    const maxScroll = page.scrollHeight - page.clientHeight;
+    scrollProgress.value = maxScroll > 0 ? page.scrollTop / maxScroll : 0;
     window.dispatchEvent(new CustomEvent("home-scroll", { detail: page.scrollTop }));
   }
   if (lastClientX < 0 || lastClientY < 0) return;
   updateHeroInteraction(lastClientX, lastClientY);
 }
+
+// IntersectionObserver for bottom section visibility
+let observer: IntersectionObserver | null = null;
 
 function scrollToSection(top: number) {
   const page = pageRef.value;
@@ -140,7 +148,8 @@ function scrollToSection(top: number) {
 
   function step(now: number) {
     const progress = Math.min((now - startTime) / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
+    // Enhanced easing for smoother transition
+    const eased = 1 - Math.pow(1 - progress, 4);
     scrollEl.scrollTop = startTop + distance * eased;
 
     if (progress < 1) {
@@ -169,13 +178,15 @@ function onWheel(e: WheelEvent) {
   const maxScroll = page.scrollHeight - page.clientHeight;
   if (maxScroll <= 0) return;
 
-  const atTop = page.scrollTop < 40;
-  const atBottom = page.scrollTop > maxScroll - 40;
+  const sectionHeight = page.clientHeight;
+  const currentSection = Math.round(page.scrollTop / sectionHeight);
+  const isAtSectionTop = Math.abs(page.scrollTop - currentSection * sectionHeight) < 10;
 
-  if (e.deltaY > 0 && atTop) {
+  // Only transition between sections at their snap points
+  if (e.deltaY > 0 && isAtSectionTop && currentSection === 0) {
     e.preventDefault();
-    scrollToSection(page.clientHeight);
-  } else if (e.deltaY < 0 && atBottom) {
+    scrollToSection(sectionHeight);
+  } else if (e.deltaY < 0 && isAtSectionTop && currentSection === 1) {
     e.preventDefault();
     scrollToSection(0);
   }
@@ -242,6 +253,19 @@ onMounted(() => {
   page?.addEventListener("scroll", onScroll, { passive: true });
   page?.addEventListener("wheel", onWheel, { passive: false });
   onScroll();
+
+  // IntersectionObserver for bottom section
+  observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        isBottomVisible.value = entry.isIntersecting;
+      });
+    },
+    { threshold: 0.1 }
+  );
+  if (featuredRef.value) {
+    observer.observe(featuredRef.value);
+  }
 });
 onUnmounted(() => {
   if (timer) clearInterval(timer);
@@ -253,12 +277,20 @@ onUnmounted(() => {
   window.removeEventListener("mousemove", onMouseMove);
   page?.removeEventListener("scroll", onScroll);
   page?.removeEventListener("wheel", onWheel);
+  if (observer) {
+    observer.disconnect();
+  }
 });
 </script>
 
 <template>
   <CursorTrail />
   <main ref="pageRef" class="home-page" :class="{ dark: isDark }">
+    <!-- Scroll Progress Indicator -->
+    <div class="scroll-indicator" :class="{ 'at-bottom': scrollProgress > 0.9 }">
+      <div class="scroll-dot" :style="{ top: `${scrollProgress * 100}%` }"></div>
+    </div>
+
     <section ref="homeRef" class="home home-hero">
       <div class="bg-glow bg-glow--top" data-speed="0.03" />
       <div class="bg-glow bg-glow--bottom" data-speed="0.02" />
@@ -294,7 +326,7 @@ onUnmounted(() => {
       </section>
     </section>
 
-    <section class="home-featured">
+    <section ref="featuredRef" class="home-featured" :class="{ 'visible': isBottomVisible }">
       <div class="featured-shell">
         <article class="home-lower-block home-about-section">
           <div class="featured-heading">
@@ -354,7 +386,7 @@ onUnmounted(() => {
   height: calc(100vh - 56px);
   overflow-y: auto;
   scroll-behavior: smooth;
-  scroll-snap-type: y mandatory;
+  scroll-snap-type: y proximity;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
 }
@@ -373,7 +405,6 @@ onUnmounted(() => {
   padding: 80px 24px 100px;
   overflow: hidden;
   scroll-snap-align: start;
-  scroll-snap-stop: always;
 }
 
 .home.reveal-active {
@@ -600,7 +631,6 @@ onUnmounted(() => {
   padding: 64px 24px 120px;
   overflow: hidden;
   scroll-snap-align: start;
-  scroll-snap-stop: always;
 }
 
 .home-featured::before {
@@ -665,6 +695,27 @@ onUnmounted(() => {
   align-items: start;
   gap: 18px;
   transform: none;
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s cubic-bezier(0.22, 0.61, 0.36, 1),
+              transform 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.home-featured.visible .home-lower-block {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.home-featured.visible .home-about-section {
+  transition-delay: 0.1s;
+}
+
+.home-featured.visible .home-recent-section {
+  transition-delay: 0.25s;
+}
+
+.home-featured.visible .home-education-section {
+  transition-delay: 0.4s;
 }
 
 .home-about-section,
@@ -751,6 +802,36 @@ onUnmounted(() => {
 }
 
 /* ===== 响应式 ===== */
+.scroll-indicator {
+  position: fixed;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 60px;
+  background: rgba(26, 115, 232, 0.15);
+  border-radius: 2px;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.home-page:hover .scroll-indicator,
+.scroll-indicator.at-bottom {
+  opacity: 1;
+}
+
+.scroll-dot {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 20px;
+  background: #1a73e8;
+  border-radius: 2px;
+  transition: top 0.1s ease-out;
+  box-shadow: 0 0 8px rgba(26, 115, 232, 0.4);
+}
+
 @media (max-width: 600px) {
   .home { padding: 60px 20px 80px; }
   .reveal-layer { padding: 60px 20px 80px; }
