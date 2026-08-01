@@ -59,8 +59,11 @@ img {
 /* ========== Global dark mode overrides ========== */
 
 :root.dark .navbar {
-  background: #222224 !important;
   border-color: #333335 !important;
+}
+
+:root.dark .navbar::before {
+  background: #222224 !important;
 }
 
 :root.dark .navbar a {

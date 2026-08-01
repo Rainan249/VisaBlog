@@ -398,7 +398,7 @@ onUnmounted(() => {
             <span class="featured-line" aria-hidden="true" />
             <p class="featured-kicker">EDUCATION</p>
           </div>
-          <div class="education-card">
+          <a href="https://www.just.edu.cn/" target="_blank" rel="noopener noreferrer" class="education-card">
             <div class="education-info">
               <h3 class="education-school">Jiangsu University of Science and Technology</h3>
               <p class="education-major">Software Engineering</p>
@@ -407,7 +407,7 @@ onUnmounted(() => {
             <div class="education-logo-wrapper">
               <img src="../assets/校徽.png" alt="校徽" class="education-logo" />
             </div>
-          </div>
+          </a>
         </article>
       </div>
     </section>
@@ -802,6 +802,19 @@ onUnmounted(() => {
   backdrop-filter: blur(20px);
   box-shadow: 0 4px 16px rgba(26, 115, 232, 0.05);
   overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  cursor: none;
+  transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1),
+              box-shadow 0.3s ease,
+              border-color 0.3s ease;
+}
+
+.education-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(26, 115, 232, 0.15);
+  border-color: rgba(26, 115, 232, 0.3);
+  text-decoration: none;
 }
 
 .education-info {
@@ -1171,6 +1184,11 @@ onUnmounted(() => {
   background: rgba(34, 34, 36, 0.72);
   border-color: rgba(74, 158, 255, 0.16);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.home-page.dark .education-card:hover {
+  border-color: rgba(74, 158, 255, 0.4);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
 }
 
 .home-page.dark .education-school {

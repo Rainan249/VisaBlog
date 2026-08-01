@@ -95,20 +95,71 @@ onUnmounted(() => {
 <style scoped>
 .navbar {
   border-bottom: 1px solid #eee;
-  background: #fff;
+  background: transparent;
   position: sticky;
   top: 0;
   z-index: 100;
-  transition: background 0.3s ease, border-color 0.3s ease;
+  transition: border-color 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* 实心背景层 — normal 模式下显示，capsule 模式下淡出 */
+.navbar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 1;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+:global(:root.dark) .navbar::before {
+  background: #161618;
+}
+
+.navbar.capsule::before {
+  opacity: 0;
 }
 
 .navbar.capsule {
-  height: 56px;
-  background: transparent;
   border-color: transparent;
 }
 
+/* 渐变覆盖层 — capsule 模式下淡入 */
+.navbar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 255, 255, 0.6) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+:global(:root.dark) .navbar::after {
+  background: linear-gradient(
+    180deg,
+    rgba(22, 22, 24, 0.92) 0%,
+    rgba(22, 22, 24, 0.6) 60%,
+    rgba(22, 22, 24, 0) 100%
+  );
+}
+
+.navbar.capsule::after {
+  opacity: 1;
+}
+
 .nav-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
   max-width: 760px;
   margin: 0 auto;
   padding: 0 24px;
@@ -116,7 +167,15 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: max-width 0.3s ease, width 0.3s ease, margin 0.3s ease, padding 0.3s ease, height 0.3s ease, border-radius 0.3s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: max-width 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
+              width 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
+              margin 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
+              padding 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
+              height 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
+              border-radius 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
+              background 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
+              border-color 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
+              box-shadow 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .navbar.capsule .nav-inner {
@@ -126,16 +185,36 @@ onUnmounted(() => {
   margin: 6px auto 0;
   padding: 0 18px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(26, 115, 232, 0.28);
   backdrop-filter: blur(20px);
-  box-shadow: 0 16px 40px rgba(26, 115, 232, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(26, 115, 232, 0.08),
+    0 4px 12px rgba(26, 115, 232, 0.06),
+    0 16px 40px rgba(26, 115, 232, 0.08);
+}
+
+.navbar.capsule .nav-inner:hover {
+  box-shadow:
+    0 0 0 1px rgba(26, 115, 232, 0.15),
+    0 4px 16px rgba(26, 115, 232, 0.1),
+    0 20px 48px rgba(26, 115, 232, 0.12);
 }
 
 :global(:root.dark) .navbar.capsule .nav-inner {
-  background: rgba(34, 34, 36, 0.82);
+  background: rgba(34, 34, 36, 0.85);
   border-color: rgba(74, 158, 255, 0.34);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
+  box-shadow:
+    0 0 0 1px rgba(74, 158, 255, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.15),
+    0 16px 40px rgba(0, 0, 0, 0.24);
+}
+
+:global(:root.dark) .navbar.capsule .nav-inner:hover {
+  box-shadow:
+    0 0 0 1px rgba(74, 158, 255, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    0 20px 48px rgba(0, 0, 0, 0.3);
 }
 
 .nav-logo {
