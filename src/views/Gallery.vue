@@ -14,6 +14,11 @@ function scrollToCategory(name: string) {
   }
 }
 
+function scrollToTop() {
+  activeCategory.value = "";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 onMounted(() => {
   document.title = "GALLERY · Rainan's ink";
   document.addEventListener("keydown", handleKeydown);
@@ -101,7 +106,7 @@ function handleKeydown(e: KeyboardEvent) {
         <button
           class="tag-btn"
           :class="{ active: activeCategory === '' }"
-          @click="activeCategory = ''; window.scrollTo({ top: 0, behavior: 'smooth' })"
+          @click="scrollToTop"
         >全部</button>
         <button
           v-for="category in galleryData"
