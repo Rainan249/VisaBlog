@@ -424,6 +424,7 @@ onUnmounted(() => {
   scroll-snap-type: y proximity;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
 }
 
 .home-page.section-scrolling {
