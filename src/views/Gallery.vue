@@ -3,13 +3,41 @@ import { ref, onMounted, onUnmounted } from "vue";
 import CursorTrail from "../components/CursorTrail.vue";
 import galleryData from "virtual:gallery-data";
 
+const activeCategory = ref("");
+let sectionObserver: IntersectionObserver | null = null;
+
+function scrollToCategory(name: string) {
+  activeCategory.value = name;
+  const element = document.getElementById(name);
+  if (element) {
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
 onMounted(() => {
   document.title = "GALLERY · Rainan's ink";
   document.addEventListener("keydown", handleKeydown);
+
+  // IntersectionObserver 追踪当前可见分类
+  sectionObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          activeCategory.value = entry.target.id;
+        }
+      }
+    },
+    { rootMargin: "-30% 0px -60% 0px", threshold: 0 }
+  );
+  galleryData.forEach((c) => {
+    const el = document.getElementById(c.name);
+    if (el) sectionObserver!.observe(el);
+  });
 });
 
 onUnmounted(() => {
   document.removeEventListener("keydown", handleKeydown);
+  sectionObserver?.disconnect();
 });
 
 const selectedImage = ref<string | null>(null);
@@ -26,13 +54,6 @@ function openPreview(img: string, images: string[]) {
 function closePreview() {
   selectedImage.value = null;
   document.body.style.overflow = "";
-}
-
-function scrollToCategory(name: string) {
-  const element = document.getElementById(name);
-  if (element) {
-    element.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
 }
 
 function prevImage() {
@@ -77,15 +98,18 @@ function handleKeydown(e: KeyboardEvent) {
     <div class="gallery-sections">
       <!-- 顶部分类导航 -->
       <nav class="category-nav">
-        <a
+        <button
+          class="tag-btn"
+          :class="{ active: activeCategory === '' }"
+          @click="activeCategory = ''; window.scrollTo({ top: 0, behavior: 'smooth' })"
+        >全部</button>
+        <button
           v-for="category in galleryData"
           :key="category.name"
-          :href="`#${category.name}`"
-          class="nav-item"
-          @click.prevent="scrollToCategory(category.name)"
-        >
-          {{ category.name }}
-        </a>
+          class="tag-btn"
+          :class="{ active: activeCategory === category.name }"
+          @click="scrollToCategory(category.name)"
+        >{{ category.name }}</button>
       </nav>
 
       <section v-for="category in galleryData" :key="category.name" class="gallery-section">
@@ -185,37 +209,32 @@ function handleKeydown(e: KeyboardEvent) {
 .category-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 32px;
-  padding: 20px 0;
+  gap: 8px;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
   border-bottom: 1px solid #eee;
 }
 
-.nav-item {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #262628;
-  text-decoration: none;
-  position: relative;
-  transition: color 0.2s;
+.tag-btn {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid #e0e0e0;
+  background: transparent;
+  color: #666;
+  font-size: 0.95rem;
+  cursor: none;
+  transition: all 0.2s;
 }
 
-.nav-item::after {
-  content: "";
-  position: absolute;
-  bottom: -4px;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background: #1a73e8;
-  transition: width 0.2s ease;
-}
-
-.nav-item:hover {
+.tag-btn:hover {
+  border-color: #1a73e8;
   color: #1a73e8;
 }
 
-.nav-item:hover::after {
-  width: 100%;
+.tag-btn.active {
+  background: #1a73e8;
+  border-color: #1a73e8;
+  color: #fff;
 }
 
 .section-title {

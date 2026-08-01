@@ -30,6 +30,15 @@ let html = rawHtml.replace(
   '<img $1src="/images/$3"'
 );
 
+// 为所有链接添加 target="_blank"
+html = html.replace(
+  /<a\s+([^>]*?)>/g,
+  (match, attrs) => {
+    if (/target=/.test(attrs)) return match;
+    return `<a ${attrs} target="_blank" rel="noopener noreferrer">`;
+  }
+);
+
 // 为代码块添加语言标签和复制按钮
 html = html.replace(
   /<pre><code class="language-(\w+)">([\s\S]*?)<\/code><\/pre>/g,
