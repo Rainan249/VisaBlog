@@ -7,7 +7,7 @@ import { useTheme } from "../lib/useTheme";
 const route = useRoute();
 const { isDark, toggle } = useTheme();
 const isCapsule = ref(false);
-const capsuleRoutes = new Set(["home", "blog", "about"]);
+const capsuleRoutes = new Set(["home", "blog", "gallery", "about"]);
 const links = [
   { path: "/", label: "HOME" },
   { path: "/blog", label: "BLOG" },
