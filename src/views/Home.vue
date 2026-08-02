@@ -186,21 +186,22 @@ function onWheel(e: WheelEvent) {
     return;
   }
 
-  const maxScroll = page.scrollHeight - page.clientHeight;
-  if (maxScroll <= 0) return;
-
   const sectionHeight = page.clientHeight;
-  const currentSection = Math.round(page.scrollTop / sectionHeight);
-  const isAtSectionTop = Math.abs(page.scrollTop - currentSection * sectionHeight) < 10;
+  const scrollTop = page.scrollTop;
+  const atHero = scrollTop < sectionHeight * 0.5;
+  const atFeatured = scrollTop >= sectionHeight * 0.5;
 
-  // Only transition between sections at their snap points
-  if (e.deltaY > 0 && isAtSectionTop && currentSection === 0) {
+  // Hero → 向下滚：跳到 featured
+  if (e.deltaY > 0 && atHero) {
     e.preventDefault();
     scrollToSection(sectionHeight);
-  } else if (e.deltaY < 0 && isAtSectionTop && currentSection === 1) {
+  }
+  // Featured 顶部 → 向上滚：回到 hero
+  else if (e.deltaY < 0 && atFeatured && scrollTop <= sectionHeight + 10) {
     e.preventDefault();
     scrollToSection(0);
   }
+  // Featured 内容区 → 允许正常滚动
 }
 
 function updateHeroInteraction(clientX: number, clientY: number) {
@@ -420,8 +421,7 @@ onUnmounted(() => {
   background: linear-gradient(175deg, #fafbfd 0%, #f2f5fa 40%, #fafbfd 100%);
   height: calc(100vh - 56px);
   overflow-y: auto;
-  scroll-behavior: smooth;
-  scroll-snap-type: y proximity;
+  scroll-behavior: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
@@ -434,14 +434,15 @@ onUnmounted(() => {
 }
 
 .home {
-  position: relative;
-  min-height: calc(100vh - 56px);
+  position: sticky;
+  top: 0;
+  height: calc(100vh - 56px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 80px 24px 100px;
   overflow: hidden;
-  scroll-snap-align: start;
+  z-index: 1;
 }
 
 .home.reveal-active {
@@ -684,7 +685,8 @@ onUnmounted(() => {
   justify-content: center;
   padding: 64px 24px 120px;
   overflow: hidden;
-  scroll-snap-align: start;
+  z-index: 2;
+  background: linear-gradient(175deg, #fafbfd 0%, #f2f5fa 40%, #fafbfd 100%);
 }
 
 .home-featured::before {
@@ -1150,6 +1152,10 @@ onUnmounted(() => {
 
 .home-page.dark .bg-glow--bottom {
   background: radial-gradient(circle, rgba(100,140,255,0.08) 0%, transparent 70%);
+}
+
+.home-page.dark .home-featured {
+  background: #161618;
 }
 
 .home-page.dark .home-featured::before {
