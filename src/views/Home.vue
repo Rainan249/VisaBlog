@@ -130,6 +130,12 @@ function onScroll() {
     const maxScroll = page.scrollHeight - page.clientHeight;
     scrollProgress.value = maxScroll > 0 ? page.scrollTop / maxScroll : 0;
     window.dispatchEvent(new CustomEvent("home-scroll", { detail: page.scrollTop }));
+
+    // 当滚动超过hero区域时，移除reveal-active类，让光标轨迹显示
+    if (page.scrollTop > 100) {
+      document.body.classList.remove("reveal-active");
+      insideHome = false;
+    }
   }
   if (lastClientX < 0 || lastClientY < 0) return;
   updateHeroInteraction(lastClientX, lastClientY);

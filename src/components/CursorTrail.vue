@@ -12,11 +12,11 @@ let lastAdd = 0;
 
 function initCanvas() {
   canvas = document.createElement("canvas");
-  canvas.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:9999;transition:opacity 0.3s ease;";
+  canvas.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:9999;";
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   document.body.appendChild(canvas);
-  ctx = canvas.getContext("2d")!;
+  ctx = canvas.getContext("2d");
 }
 
 function addPoint(x: number, y: number) {
@@ -29,9 +29,6 @@ function addPoint(x: number, y: number) {
 
 function draw() {
   if (!ctx || !canvas) return;
-
-  // HOME 页大圈显示时隐藏光标轨迹
-  canvas.style.opacity = document.body.classList.contains("reveal-active") ? "0" : "1";
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -49,13 +46,13 @@ function draw() {
     const width = 14 * ease;
     const hue = (i / points.length) * 300;
 
-    ctx!.beginPath();
-    ctx!.moveTo(p0.x, p0.y);
-    ctx!.lineTo(p1.x, p1.y);
-    ctx!.strokeStyle = `hsla(${hue}, 80%, 55%, ${alpha})`;
-    ctx!.lineWidth = width;
-    ctx!.lineCap = "round";
-    ctx!.stroke();
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.strokeStyle = `hsla(${hue}, 80%, 55%, ${alpha})`;
+    ctx.lineWidth = width;
+    ctx.lineCap = "round";
+    ctx.stroke();
   }
 
   rafId = requestAnimationFrame(draw);
