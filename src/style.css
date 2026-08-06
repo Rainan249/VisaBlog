@@ -72,12 +72,40 @@ img {
   background: #222224 !important;
 }
 
+:root.dark .navbar::after {
+  background: #222224 !important;
+}
+
 :root.dark .navbar a {
   color: #a0a0a0 !important;
 }
 :root.dark .navbar a:hover,
 :root.dark .navbar a.active {
   color: #4a9eff !important;
+}
+
+:root.dark .navbar .nav-logo {
+  color: #e5e5e5 !important;
+}
+
+:root.dark .navbar .nav-links a {
+  color: #ccc !important;
+}
+
+:root.dark .navbar.capsule .nav-inner {
+  background: #222224 !important;
+  border-color: rgba(74, 158, 255, 0.34) !important;
+  box-shadow:
+    0 0 0 1px rgba(74, 158, 255, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.25),
+    0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+:root.dark .navbar.capsule .nav-inner:hover {
+  box-shadow:
+    0 0 0 1px rgba(74, 158, 255, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    0 20px 48px rgba(0, 0, 0, 0.4);
 }
 
 :root.dark .blog,

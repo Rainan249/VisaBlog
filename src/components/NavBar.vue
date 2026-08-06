@@ -114,10 +114,6 @@ onUnmounted(() => {
   transition: opacity 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-:global(:root.dark) .navbar::before {
-  background: #161618;
-}
-
 .navbar.capsule::before {
   opacity: 0;
 }
@@ -141,15 +137,6 @@ onUnmounted(() => {
   pointer-events: none;
   z-index: 0;
   transition: opacity 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-
-:global(:root.dark) .navbar::after {
-  background: linear-gradient(
-    180deg,
-    rgba(22, 22, 24, 0.92) 0%,
-    rgba(22, 22, 24, 0.6) 60%,
-    rgba(22, 22, 24, 0) 100%
-  );
 }
 
 .navbar.capsule::after {
@@ -199,22 +186,6 @@ onUnmounted(() => {
     0 0 0 1px rgba(26, 115, 232, 0.15),
     0 4px 16px rgba(26, 115, 232, 0.1),
     0 20px 48px rgba(26, 115, 232, 0.12);
-}
-
-:global(:root.dark) .navbar.capsule .nav-inner {
-  background: rgba(34, 34, 36, 0.85);
-  border-color: rgba(74, 158, 255, 0.34);
-  box-shadow:
-    0 0 0 1px rgba(74, 158, 255, 0.1),
-    0 4px 12px rgba(0, 0, 0, 0.15),
-    0 16px 40px rgba(0, 0, 0, 0.24);
-}
-
-:global(:root.dark) .navbar.capsule .nav-inner:hover {
-  box-shadow:
-    0 0 0 1px rgba(74, 158, 255, 0.2),
-    0 4px 16px rgba(0, 0, 0, 0.2),
-    0 20px 48px rgba(0, 0, 0, 0.3);
 }
 
 .nav-logo {
