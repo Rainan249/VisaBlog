@@ -19,7 +19,16 @@ function initCanvas() {
   ctx = canvas.getContext("2d");
 }
 
+function isRevealActive() {
+  return document.body.classList.contains("reveal-active");
+}
+
 function addPoint(x: number, y: number) {
+  if (isRevealActive()) {
+    points.length = 0;
+    return;
+  }
+
   const now = Date.now();
   if (now - lastAdd < 8) return;
   lastAdd = now;

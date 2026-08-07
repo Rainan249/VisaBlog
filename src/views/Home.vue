@@ -210,6 +210,11 @@ function onWheel(e: WheelEvent) {
   // Featured 内容区 → 允许正常滚动
 }
 
+function isAtHeroTop() {
+  const page = pageRef.value;
+  return !page || page.scrollTop <= 100;
+}
+
 function updateHeroInteraction(clientX: number, clientY: number) {
   const home = homeRef.value;
   if (!home) return;
@@ -222,7 +227,7 @@ function updateHeroInteraction(clientX: number, clientY: number) {
     clientY >= rect.top &&
     clientY <= rect.bottom;
 
-  if (!isInsideHero) {
+  if (!isInsideHero || !isAtHeroTop()) {
     if (insideHome) startCollapse();
     document.body.classList.remove("reveal-active");
     return;
@@ -280,7 +285,7 @@ onMounted(() => {
         isBottomVisible.value = entry.isIntersecting;
       });
     },
-    { threshold: 0.1 }
+    { root: pageRef.value, threshold: 0.1 }
   );
   if (featuredRef.value) {
     observer.observe(featuredRef.value);
