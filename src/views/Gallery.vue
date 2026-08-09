@@ -48,6 +48,21 @@ onUnmounted(() => {
 const selectedImage = ref<string | null>(null);
 const selectedIndex = ref(0);
 const currentCategoryImages = ref<string[]>([]);
+const showToc = ref(false);
+
+function toggleToc() {
+  showToc.value = !showToc.value;
+}
+
+function closeToc() {
+  showToc.value = false;
+}
+
+function jumpTo(id: string) {
+  showToc.value = false;
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 function openPreview(img: string, images: string[]) {
   selectedImage.value = img;
@@ -138,6 +153,37 @@ function handleKeydown(e: KeyboardEvent) {
       </section>
     </div>
   </div>
+
+  <!-- 悬浮目录 -->
+  <button class="toc-fab" @click.prevent="toggleToc" type="button">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M4 6h16M4 12h16M4 18h12" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <div v-if="showToc" class="toc-overlay" @click="closeToc"></div>
+  <Transition name="toc-expand">
+    <div v-if="showToc" class="toc-panel">
+      <template v-for="category in galleryData" :key="category.name">
+        <div
+          class="toc-item toc-item-l1"
+          :class="{ active: activeCategory === category.name }"
+          @click="jumpTo(category.name)"
+        >
+          {{ category.name }}
+        </div>
+        <template v-for="sub in category.subcategories" :key="sub.name">
+          <div
+            v-if="sub.name"
+            class="toc-item toc-item-l2"
+            @click="jumpTo(sub.name)"
+          >
+            {{ sub.name }}
+          </div>
+        </template>
+      </template>
+    </div>
+  </Transition>
 
   <!-- 图片预览模态框 -->
   <Teleport to="body">
@@ -397,5 +443,106 @@ function handleKeydown(e: KeyboardEvent) {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* 悬浮目录按钮 */
+.toc-fab {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  background: #1a73e8;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(26, 115, 232, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  z-index: 1000;
+  padding: 0;
+  line-height: 1;
+}
+
+.toc-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(26, 115, 232, 0.45);
+}
+
+/* 透明遮罩层 */
+.toc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+}
+
+/* 下拉面板 */
+.toc-panel {
+  position: fixed;
+  bottom: 96px;
+  right: 32px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  z-index: 999;
+  min-width: 140px;
+}
+
+.toc-item {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  color: #444;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.toc-item:hover {
+  background: #f0f4ff;
+  color: #1a73e8;
+}
+
+.toc-item.active {
+  background: #e8f0fe;
+  color: #1a73e8;
+  font-weight: 600;
+}
+
+.toc-item-l1 {
+  font-weight: 500;
+}
+
+.toc-item-l2 {
+  padding-left: 28px;
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.toc-item-l2:hover {
+  color: #1a73e8;
+}
+
+/* 面板展开过渡 */
+.toc-expand-enter-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toc-expand-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.toc-expand-enter-from {
+  opacity: 0;
+  transform: translateY(12px) scale(0.95);
+}
+
+.toc-expand-leave-to {
+  opacity: 0;
+  transform: translateY(8px) scale(0.97);
 }
 </style>
