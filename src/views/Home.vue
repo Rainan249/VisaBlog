@@ -371,7 +371,7 @@ onUnmounted(() => {
             <p>Life is code. I will debug it.</p>
             <div class="badge-button-row">
               <a href="https://codetime.dev" target="_blank" rel="noopener noreferrer">
-                <img src="https://shields.jannchie.com/endpoint?style=flat-square&color=222222&url=https%3A%2F%2Fcodetime.dev%2Fv3%2Fusers%2Fshield%3Fuid%3D37245%26label_color%3D334155" alt="CodeTime Badge" />
+                <img src="https://img.shields.io/endpoint?style=flat-square&color=222222&url=https%3A%2F%2Fcodetime.dev%2Fv3%2Fusers%2Fshield%3Fuid%3D37245%26label_color%3D334155" alt="CodeTime Badge" referrerpolicy="no-referrer" />
               </a>
               <router-link to="/about" class="more-about-btn">More about me</router-link>
             </div>
