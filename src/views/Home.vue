@@ -654,13 +654,23 @@ onUnmounted(() => {
   left: 50%;
   transform: translateX(-50%);
   color: rgba(26, 115, 232, 0.3);
-  animation: scrollBounce 2s ease-in-out infinite;
+  animation: scrollDrift 1.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
   z-index: 3;
 }
 
-@keyframes scrollBounce {
-  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.4; }
-  50% { transform: translateX(-50%) translateY(6px); opacity: 0.7; }
+@keyframes scrollDrift {
+  0% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 0.4;
+  }
+  70% {
+    transform: translateX(-50%) translateY(10px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) translateY(10px);
+    opacity: 0;
+  }
 }
 
 /* ===== 圈内深色样式 ===== */

@@ -845,8 +845,8 @@ watch(activeId, (id) => {
 
 .post-content :deep(blockquote) {
   margin: 16px 0;
-  padding: 8px 16px;
-  border-left: 4px solid #1a73e8;
+  padding: 12px 16px;
+  border-left: 1px solid rgba(26, 115, 232, 0.35);
   background: #f8f9fa;
   color: #555;
 }
@@ -1115,14 +1115,14 @@ watch(activeId, (id) => {
 /* ---------- Grid-animated children container ---------- */
 
 .toc-children {
-  overflow: hidden;
-  max-height: 600px;
+  display: grid;
+  grid-template-rows: 1fr;
   opacity: 1;
-  transition: max-height 0.3s ease, opacity 0.2s ease;
+  transition: grid-template-rows 0.3s ease, opacity 0.2s ease;
 }
 
 .toc-children.collapsed {
-  max-height: 0;
+  grid-template-rows: 0fr;
   opacity: 0;
 }
 

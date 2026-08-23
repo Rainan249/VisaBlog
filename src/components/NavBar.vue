@@ -99,7 +99,11 @@ onUnmounted(() => {
   position: sticky;
   top: 0;
   z-index: 100;
-  transition: border-color 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition: border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.navbar.capsule {
+  border-color: transparent;
 }
 
 /* 实心背景层 — normal 模式下显示，capsule 模式下淡出 */
@@ -118,10 +122,6 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-.navbar.capsule {
-  border-color: transparent;
-}
-
 /* 渐变覆盖层 — capsule 模式下淡入 */
 .navbar::after {
   content: "";
@@ -136,7 +136,7 @@ onUnmounted(() => {
   opacity: 0;
   pointer-events: none;
   z-index: 0;
-  transition: opacity 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .navbar.capsule::after {
@@ -154,15 +154,15 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: max-width 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
-              width 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
-              margin 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
-              padding 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
-              height 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
-              border-radius 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
-              background 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
-              border-color 0.4s cubic-bezier(0.22, 0.61, 0.36, 1),
-              box-shadow 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition: max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              width 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              margin 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              padding 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              border-radius 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              background 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .navbar.capsule .nav-inner {
@@ -267,5 +267,14 @@ onUnmounted(() => {
 
 .theme-toggle.dark .toggle-knob {
   transform: translateX(26px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navbar,
+  .navbar::before,
+  .navbar::after,
+  .nav-inner {
+    transition-duration: 0.01ms;
+  }
 }
 </style>

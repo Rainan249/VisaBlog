@@ -293,8 +293,6 @@ function handleKeydown(e: KeyboardEvent) {
   font-weight: 700;
   color: #262628;
   margin: 0 0 20px;
-  padding-left: 12px;
-  border-left: 3px solid #1a73e8;
 }
 
 .sub-section-title {
@@ -302,8 +300,6 @@ function handleKeydown(e: KeyboardEvent) {
   font-weight: 600;
   color: #444;
   margin: 24px 0 12px;
-  padding-left: 8px;
-  border-left: 2px solid #999;
 }
 
 .photo-grid {
