@@ -775,7 +775,7 @@ watch(activeId, (id) => {
 .post-content :deep(h3) {
   font-size: 1.2rem;
   margin: 24px 0 12px;
-  color: #0d9488;
+  color: #3a5ccc;
 }
 
 .post-content :deep(p) {
@@ -1067,22 +1067,22 @@ watch(activeId, (id) => {
 }
 
 .toc-link--h2 {
-  color: #3974b8;
+  color: rgba(0, 47, 167, 0.72);
   line-height: 1.45;
   font-weight: 500;
   font-size: 0.85rem;
 }
 
-.toc-link--h2:hover { color: #28639f; background-color: rgba(57, 116, 184, 0.06); }
+.toc-link--h2:hover { color: #002fa7; background-color: rgba(0, 47, 167, 0.06); }
 
 .toc-link--h1 {
-  color: #7457a8;
+  color: #002fa7;
   line-height: 1.45;
   font-weight: 600;
   font-size: 0.9rem;
 }
 
-.toc-link--h1:hover { color: #684899; background-color: rgba(116, 87, 168, 0.06); }
+.toc-link--h1:hover { color: #002fa7; background-color: rgba(0, 47, 167, 0.08); }
 
 .toc-link.active {
   padding-left: 20px;
@@ -1101,14 +1101,14 @@ watch(activeId, (id) => {
 }
 
 .toc-link--h1.active {
-  color: #684899;
-  background-color: rgba(116, 87, 168, 0.1);
+  color: #002fa7;
+  background-color: rgba(0, 47, 167, 0.12);
   font-weight: 600;
 }
 
 .toc-link--h2.active {
-  color: #28639f;
-  background-color: rgba(57, 116, 184, 0.1);
+  color: #002fa7;
+  background-color: rgba(0, 47, 167, 0.1);
   font-weight: 500;
 }
 
@@ -1146,17 +1146,17 @@ watch(activeId, (id) => {
 }
 
 .toc-link--h3 {
-  color: #438f88;
+  color: rgba(0, 47, 167, 0.45);
   line-height: 1.4;
   font-size: 0.78rem;
   font-weight: 400;
 }
 
-.toc-link--h3:hover { color: #327c75; background-color: rgba(67, 143, 136, 0.06); }
+.toc-link--h3:hover { color: rgba(0, 47, 167, 0.7); background-color: rgba(0, 47, 167, 0.06); }
 
 .toc-link--h3.active {
-  color: #327c75;
-  background-color: rgba(67, 143, 136, 0.1);
+  color: rgba(0, 47, 167, 0.72);
+  background-color: rgba(0, 47, 167, 0.1);
   font-weight: 500;
 }
 

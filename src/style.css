@@ -2,12 +2,18 @@
 *::before,
 *::after {
   box-sizing: border-box;
-  cursor: none !important;
-  scrollbar-width: none;
 }
 
-*::-webkit-scrollbar {
-  display: none;
+@media (pointer: fine) {
+  *,
+  *::before,
+  *::after {
+    cursor: none !important;
+    scrollbar-width: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 :root {
@@ -55,11 +61,50 @@ a {
 
 a:hover {
   text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
 }
 
 img {
   max-width: 100%;
   height: auto;
+}
+
+/* ========== Browser surface polish ========== */
+
+::selection {
+  background: #002fa7;
+  color: #fff;
+}
+
+:root.dark ::selection {
+  background: #82aaff;
+  color: #161618;
+}
+
+:focus-visible {
+  outline: 2px solid #002fa7;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+:root.dark :focus-visible {
+  outline-color: #82aaff;
+}
+
+:root {
+  caret-color: #002fa7;
+}
+
+:root.dark {
+  caret-color: #82aaff;
+}
+
+.num,
+td,
+th,
+[data-num] {
+  font-variant-numeric: tabular-nums;
 }
 
 /* ========== Global dark mode overrides ========== */
@@ -228,7 +273,7 @@ img {
 }
 
 :root.dark .post-content h3 {
-  color: #34d399 !important;
+  color: #8fb3ff !important;
 }
 
 :root.dark .post-content p,
@@ -252,42 +297,42 @@ img {
 }
 
 :root.dark .toc-link--h1 {
-  color: #b99ae8 !important;
+  color: #82aaff !important;
 }
 
 :root.dark .toc-link--h2 {
-  color: #79b3f4 !important;
+  color: #6e97e8 !important;
 }
 
 :root.dark .toc-link--h3 {
-  color: #67c7bd !important;
+  color: #4d6fd4 !important;
 }
 
 :root.dark .toc-link--h1:hover {
-  background: rgba(185, 154, 232, 0.08) !important;
+  background: rgba(130, 170, 255, 0.1) !important;
 }
 
 :root.dark .toc-link--h2:hover {
-  background: rgba(121, 179, 244, 0.08) !important;
+  background: rgba(130, 170, 255, 0.08) !important;
 }
 
 :root.dark .toc-link--h3:hover {
-  background: rgba(103, 199, 189, 0.08) !important;
+  background: rgba(130, 170, 255, 0.06) !important;
 }
 
 :root.dark .toc-link--h1.active {
-  color: #c9acf2 !important;
-  background: rgba(185, 154, 232, 0.14) !important;
+  color: #8fb3ff !important;
+  background: rgba(130, 170, 255, 0.16) !important;
 }
 
 :root.dark .toc-link--h2.active {
-  color: #8fc3fb !important;
-  background: rgba(121, 179, 244, 0.14) !important;
+  color: #7aa3f2 !important;
+  background: rgba(130, 170, 255, 0.13) !important;
 }
 
 :root.dark .toc-link--h3.active {
-  color: #7bd5cc !important;
-  background: rgba(103, 199, 189, 0.14) !important;
+  color: #6a8fe6 !important;
+  background: rgba(130, 170, 255, 0.1) !important;
 }
 
 :root.dark .toc-mobile-panel {

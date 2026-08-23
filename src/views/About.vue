@@ -117,8 +117,8 @@ onUnmounted(() => {
 }
 
 .avatar {
-  width: 64px;
-  height: 64px;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;

@@ -318,7 +318,6 @@ onUnmounted(() => {
     <section ref="homeRef" class="home home-hero">
       <div class="bg-glow bg-glow--top" data-speed="0.03" />
       <div class="bg-glow bg-glow--bottom" data-speed="0.02" />
-      <div class="bg-grid" />
 
       <!-- 浅色背景图案 -->
       <div class="text-pattern" aria-hidden="true">
@@ -483,18 +482,6 @@ onUnmounted(() => {
   width: 440px; height: 440px;
   background: radial-gradient(circle, rgba(0, 47, 167,0.08) 0%, transparent 70%);
   bottom: -220px; left: -100px;
-}
-
-/* ===== 网格 ===== */
-.bg-grid {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.35;
-  background-image: linear-gradient(rgba(0, 47, 167,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 47, 167,0.04) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 60%);
-  -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 60%);
 }
 
 /* ===== 浅色背景图案 ===== */
@@ -903,12 +890,9 @@ onUnmounted(() => {
 .badge-button-row {
   margin-top: 16px;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.badge-button-row > a:first-child {
-  align-self: flex-start;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .badge-button-row > a:first-child img {
@@ -1138,13 +1122,6 @@ onUnmounted(() => {
   color: rgba(0,0,0,0.2);
 }
 
-.home-page.dark .bg-grid {
-  opacity: 0.12;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-}
-
 .home-page.dark .reveal-layer {
   background: linear-gradient(135deg, #fafbfd 0%, #f0f2f5 50%, #fafbfd 100%);
 }
@@ -1273,5 +1250,28 @@ onUnmounted(() => {
 .home-page.dark .featured-tags-right span {
   background: rgba(130, 170, 255, 0.1);
   color: #82aaff;
+}
+
+/* ===== Touch: reveal dark layer by default ===== */
+@media (pointer: coarse) {
+  .reveal-layer {
+    clip-path: circle(100% at 50% 50%) !important;
+    opacity: 1 !important;
+    pointer-events: auto;
+  }
+  .trail-layer { display: none; }
+  .pattern-char { animation: none; }
+  .home.reveal-active { cursor: auto; }
+  .home.reveal-active a,
+  .home.reveal-active button { cursor: pointer; }
+}
+
+/* ===== Reduced motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  .pattern-row { animation: none; }
+  .bg-glow { filter: blur(60px); opacity: 0.25; }
+  .reveal-layer { transition: opacity 0.2s ease; }
+  .trail-layer { display: none; }
+  .hero { transition: none; transform: none; }
 }
 </style>
