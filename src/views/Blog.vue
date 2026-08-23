@@ -187,13 +187,13 @@ function selectTag(tag: string) {
 }
 
 .tag-btn:hover {
-  border-color: #1a73e8;
-  color: #1a73e8;
+  border-color: #002fa7;
+  color: #002fa7;
 }
 
 .tag-btn.active {
-  background: #1a73e8;
-  border-color: #1a73e8;
+  background: #002fa7;
+  border-color: #002fa7;
   color: #fff;
 }
 
@@ -224,8 +224,8 @@ function selectTag(tag: string) {
 
 .search-toggle:hover {
   background: linear-gradient(135deg, #e8f0fe 0%, #d2e3fc 100%);
-  color: #1a73e8;
-  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2);
+  color: #002fa7;
+  box-shadow: 0 4px 12px rgba(0, 47, 167, 0.2);
   transform: scale(1.08);
 }
 
@@ -234,9 +234,9 @@ function selectTag(tag: string) {
 }
 
 .search-wrapper:hover .search-toggle {
-  background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%);
+  background: linear-gradient(135deg, #002fa7 0%, #1557b0 100%);
   color: #fff;
-  box-shadow: 0 4px 14px rgba(26, 115, 232, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 47, 167, 0.35);
 }
 
 .search-glass {
@@ -275,8 +275,8 @@ function selectTag(tag: string) {
   margin-left: 8px;
   opacity: 1;
   pointer-events: auto;
-  border-bottom-color: #1a73e8;
-  box-shadow: 0 2px 12px rgba(26, 115, 232, 0.12);
+  border-bottom-color: #002fa7;
+  box-shadow: 0 2px 12px rgba(0, 47, 167, 0.12);
 }
 
 .search-input::placeholder {
@@ -318,7 +318,7 @@ function selectTag(tag: string) {
   bottom: 3px;
   width: 2.5px;
   border-radius: 2px;
-  background: #1a73e8;
+  background: #002fa7;
 }
 
 /* ===== 文章列表 ===== */
@@ -360,7 +360,7 @@ function selectTag(tag: string) {
 }
 
 .item-title:hover {
-  color: #1a73e8;
+  color: #002fa7;
   text-decoration: underline;
 }
 

@@ -278,13 +278,13 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 .tag-btn:hover {
-  border-color: #1a73e8;
-  color: #1a73e8;
+  border-color: #002fa7;
+  color: #002fa7;
 }
 
 .tag-btn.active {
-  background: #1a73e8;
-  border-color: #1a73e8;
+  background: #002fa7;
+  border-color: #002fa7;
   color: #fff;
 }
 
@@ -450,13 +450,13 @@ function handleKeydown(e: KeyboardEvent) {
   height: 50px;
   border-radius: 50%;
   border: none;
-  background: #1a73e8;
+  background: #002fa7;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(26, 115, 232, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 47, 167, 0.35);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   z-index: 1000;
   padding: 0;
@@ -465,7 +465,7 @@ function handleKeydown(e: KeyboardEvent) {
 
 .toc-fab:hover {
   transform: scale(1.08);
-  box-shadow: 0 6px 20px rgba(26, 115, 232, 0.45);
+  box-shadow: 0 6px 20px rgba(0, 47, 167, 0.45);
 }
 
 /* 透明遮罩层 */
@@ -500,12 +500,12 @@ function handleKeydown(e: KeyboardEvent) {
 
 .toc-item:hover {
   background: #f0f4ff;
-  color: #1a73e8;
+  color: #002fa7;
 }
 
 .toc-item.active {
   background: #e8f0fe;
-  color: #1a73e8;
+  color: #002fa7;
   font-weight: 600;
 }
 
@@ -520,7 +520,7 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 .toc-item-l2:hover {
-  color: #1a73e8;
+  color: #002fa7;
 }
 
 /* 面板展开过渡 */

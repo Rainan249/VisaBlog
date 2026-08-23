@@ -416,7 +416,7 @@ watch(activeId, (id) => {
             :percentage="tocProgress.percent"
             :stroke-width="2"
             :show-text="false"
-            color="#1a73e8"
+            color="#002fa7"
           />
         </div>
       </div>
@@ -573,7 +573,7 @@ watch(activeId, (id) => {
                 :percentage="tocProgress.percent"
                 :stroke-width="2"
                 :show-text="false"
-                color="#1a73e8"
+                color="#002fa7"
               />
             </div>
 
@@ -760,16 +760,16 @@ watch(activeId, (id) => {
   font-size: 1.8rem;
   margin: 40px 0 20px;
   padding-bottom: 10px;
-  border-bottom: 2px solid rgba(124, 58, 237, 0.2);
-  color: #7c3aed;
+  border-bottom: 2px solid rgba(0, 47, 167, 0.2);
+  color: #002fa7;
 }
 
 .post-content :deep(h2) {
   font-size: 1.4rem;
   margin: 32px 0 16px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(26, 115, 232, 0.2);
-  color: #1a73e8;
+  border-bottom: 1px solid rgba(0, 47, 167, 0.2);
+  color: #002fa7;
 }
 
 .post-content :deep(h3) {
@@ -846,7 +846,7 @@ watch(activeId, (id) => {
 .post-content :deep(blockquote) {
   margin: 16px 0;
   padding: 12px 16px;
-  border-left: 1px solid rgba(26, 115, 232, 0.35);
+  border-left: 1px solid rgba(0, 47, 167, 0.35);
   background: #f8f9fa;
   color: #555;
 }
@@ -862,7 +862,7 @@ watch(activeId, (id) => {
 }
 
 .post-content :deep(a) {
-  color: #1a73e8;
+  color: #002fa7;
 }
 
 .post-content :deep(img) {
@@ -975,15 +975,15 @@ watch(activeId, (id) => {
 }
 
 .toc-action-btn:hover {
-  color: #1a73e8;
-  border-color: #1a73e8;
-  background: rgba(26, 115, 232, 0.04);
+  color: #002fa7;
+  border-color: #002fa7;
+  background: rgba(0, 47, 167, 0.04);
 }
 
 .toc-action-btn.active {
-  color: #1a73e8;
-  border-color: #1a73e8;
-  background: rgba(26, 115, 232, 0.06);
+  color: #002fa7;
+  border-color: #002fa7;
+  background: rgba(0, 47, 167, 0.06);
 }
 
 /* ---------- Progress bar ---------- */
@@ -1045,7 +1045,7 @@ watch(activeId, (id) => {
   transition: transform 0.25s ease, color 0.15s;
 }
 
-.toc-chevron:hover { color: #1a73e8; }
+.toc-chevron:hover { color: #002fa7; }
 .toc-chevron.collapsed { transform: rotate(-90deg); }
 .toc-chevron--ghost { visibility: hidden; }
 
@@ -1172,10 +1172,10 @@ watch(activeId, (id) => {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: #1a73e8;
+  background: #002fa7;
   color: #fff;
   border: none;
-  box-shadow: 0 4px 16px rgba(26, 115, 232, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 47, 167, 0.35);
   z-index: 998;
   align-items: center;
   justify-content: center;
@@ -1184,7 +1184,7 @@ watch(activeId, (id) => {
 
 .toc-mobile-fab:active {
   transform: scale(0.94);
-  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 47, 167, 0.25);
 }
 
 /* ========================================
@@ -1277,9 +1277,9 @@ watch(activeId, (id) => {
 }
 
 .toc-action-btn--mobile:hover {
-  color: #1a73e8;
-  border-color: #1a73e8;
-  background: rgba(26, 115, 232, 0.04);
+  color: #002fa7;
+  border-color: #002fa7;
+  background: rgba(0, 47, 167, 0.04);
 }
 
 /* Slide-in transition */

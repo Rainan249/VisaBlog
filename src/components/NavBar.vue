@@ -173,19 +173,19 @@ onUnmounted(() => {
   padding: 0 18px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(26, 115, 232, 0.28);
+  border: 1px solid rgba(0, 47, 167, 0.28);
   backdrop-filter: blur(20px);
   box-shadow:
-    0 0 0 1px rgba(26, 115, 232, 0.08),
-    0 4px 12px rgba(26, 115, 232, 0.06),
-    0 16px 40px rgba(26, 115, 232, 0.08);
+    0 0 0 1px rgba(0, 47, 167, 0.08),
+    0 4px 12px rgba(0, 47, 167, 0.06),
+    0 16px 40px rgba(0, 47, 167, 0.08);
 }
 
 .navbar.capsule .nav-inner:hover {
   box-shadow:
-    0 0 0 1px rgba(26, 115, 232, 0.15),
-    0 4px 16px rgba(26, 115, 232, 0.1),
-    0 20px 48px rgba(26, 115, 232, 0.12);
+    0 0 0 1px rgba(0, 47, 167, 0.15),
+    0 4px 16px rgba(0, 47, 167, 0.1),
+    0 20px 48px rgba(0, 47, 167, 0.12);
 }
 
 .nav-logo {
@@ -196,7 +196,7 @@ onUnmounted(() => {
 }
 
 .nav-logo:hover {
-  color: #1a73e8;
+  color: #002fa7;
 }
 
 .nav-links {
@@ -215,7 +215,7 @@ onUnmounted(() => {
 
 .nav-links a:hover,
 .nav-links a.active {
-  color: #1a73e8;
+  color: #002fa7;
 }
 
 .nav-right {

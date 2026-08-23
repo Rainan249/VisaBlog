@@ -19,7 +19,7 @@
   --card-bg: #fff;
   --code-bg: #f4f4f4;
   --blockquote-bg: #f8f9fa;
-  --blockquote-border: #1a73e8;
+  --blockquote-border: #002fa7;
   color-scheme: light;
 }
 
@@ -32,7 +32,7 @@
   --card-bg: #222224;
   --code-bg: #111112;
   --blockquote-bg: #1c1c1e;
-  --blockquote-border: #4a9eff;
+  --blockquote-border: #82aaff;
   color-scheme: dark;
 }
 
@@ -49,7 +49,7 @@ body {
 }
 
 a {
-  color: #1a73e8;
+  color: #002fa7;
   text-decoration: none;
 }
 
@@ -81,7 +81,7 @@ img {
 }
 :root.dark .navbar a:hover,
 :root.dark .navbar a.active {
-  color: #4a9eff !important;
+  color: #82aaff !important;
 }
 
 :root.dark .navbar .nav-logo {
@@ -94,16 +94,16 @@ img {
 
 :root.dark .navbar.capsule .nav-inner {
   background: #222224 !important;
-  border-color: rgba(74, 158, 255, 0.34) !important;
+  border-color: rgba(130, 170, 255, 0.34) !important;
   box-shadow:
-    0 0 0 1px rgba(74, 158, 255, 0.1),
+    0 0 0 1px rgba(130, 170, 255, 0.1),
     0 4px 12px rgba(0, 0, 0, 0.25),
     0 16px 40px rgba(0, 0, 0, 0.35);
 }
 
 :root.dark .navbar.capsule .nav-inner:hover {
   box-shadow:
-    0 0 0 1px rgba(74, 158, 255, 0.2),
+    0 0 0 1px rgba(130, 170, 255, 0.2),
     0 4px 16px rgba(0, 0, 0, 0.3),
     0 20px 48px rgba(0, 0, 0, 0.4);
 }
@@ -136,7 +136,7 @@ img {
 }
 
 :root.dark .blog .item-title:hover {
-  color: #4a9eff !important;
+  color: #82aaff !important;
 }
 
 :root.dark .post-meta {
@@ -158,13 +158,13 @@ img {
 }
 
 :root.dark .tag-btn:hover {
-  border-color: #4a9eff !important;
-  color: #4a9eff !important;
+  border-color: #82aaff !important;
+  color: #82aaff !important;
 }
 
 :root.dark .tag-btn.active {
-  background: #4a9eff !important;
-  border-color: #4a9eff !important;
+  background: #82aaff !important;
+  border-color: #82aaff !important;
   color: #fff !important;
 }
 
@@ -202,9 +202,9 @@ img {
 }
 
 :root.dark .skill-tag {
-  background: rgba(74,158,255,0.1) !important;
-  color: #4a9eff !important;
-  border-color: rgba(74,158,255,0.2) !important;
+  background: rgba(130, 170, 255,0.1) !important;
+  color: #82aaff !important;
+  border-color: rgba(130, 170, 255,0.2) !important;
 }
 
 :root.dark .contact-link {
@@ -213,9 +213,9 @@ img {
 }
 
 :root.dark .contact-link:hover {
-  background: rgba(74,158,255,0.08) !important;
-  border-color: rgba(74,158,255,0.3) !important;
-  color: #4a9eff !important;
+  background: rgba(130, 170, 255,0.08) !important;
+  border-color: rgba(130, 170, 255,0.3) !important;
+  color: #82aaff !important;
 }
 
 :root.dark .post-page article h1 {
@@ -223,8 +223,8 @@ img {
 }
 
 :root.dark .post-content h2 {
-  color: #4a9eff !important;
-  border-bottom-color: rgba(74,158,255,0.15) !important;
+  color: #82aaff !important;
+  border-bottom-color: rgba(130, 170, 255,0.15) !important;
 }
 
 :root.dark .post-content h3 {
@@ -247,7 +247,7 @@ img {
 
 :root.dark .post-content blockquote {
   background: #222224 !important;
-  border-left-color: #4a9eff !important;
+  border-left-color: #82aaff !important;
   color: #a0a0a0 !important;
 }
 

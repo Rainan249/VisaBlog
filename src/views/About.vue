@@ -122,7 +122,7 @@ onUnmounted(() => {
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-  box-shadow: 0 4px 14px rgba(26,115,232,0.2);
+  box-shadow: 0 4px 14px rgba(0, 47, 167,0.2);
 }
 
 .head-info {
@@ -149,7 +149,7 @@ onUnmounted(() => {
 }
 
 .school-link {
-  color: #1a73e8;
+  color: #002fa7;
   text-decoration: none;
 }
 
@@ -199,7 +199,7 @@ onUnmounted(() => {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #1a73e8;
+  background: #002fa7;
   opacity: 0.5;
 }
 
@@ -216,9 +216,9 @@ onUnmounted(() => {
   padding: 6px 16px;
   border-radius: 20px;
   font-size: 1rem;
-  background: rgba(26,115,232,0.07);
-  color: #1a73e8;
-  border: 1px solid rgba(26,115,232,0.15);
+  background: rgba(0, 47, 167,0.07);
+  color: #002fa7;
+  border: 1px solid rgba(0, 47, 167,0.15);
   font-weight: 500;
 }
 
@@ -245,15 +245,15 @@ onUnmounted(() => {
 }
 
 .contact-link:hover {
-  background: rgba(26,115,232,0.05);
-  border-color: rgba(26,115,232,0.2);
-  color: #1a73e8;
+  background: rgba(0, 47, 167,0.05);
+  border-color: rgba(0, 47, 167,0.2);
+  color: #002fa7;
   text-decoration: none;
 }
 
 .contact-link svg {
   flex-shrink: 0;
-  color: #1a73e8;
+  color: #002fa7;
 }
 
 /* ===== 运行时间 ===== */

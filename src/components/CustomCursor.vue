@@ -6,8 +6,8 @@ el.style.cssText = `
   position:fixed; pointer-events:none; z-index:10000;
   width:14px; height:14px;
   border-radius:50%;
-  background:#1a73e8;
-  box-shadow:0 0 10px rgba(26,115,232,0.5);
+  background:#002fa7;
+  box-shadow:0 0 10px rgba(0, 47, 167,0.5);
   transform:translate(-50%,-50%);
   transition:opacity 0.3s ease;
 `;
