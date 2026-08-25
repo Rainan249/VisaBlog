@@ -694,7 +694,7 @@ onUnmounted(() => {
   padding: 64px 24px 120px;
   overflow: hidden;
   z-index: 2;
-  background: linear-gradient(175deg, #fafbfd 0%, #f2f5fa 40%, #fafbfd 100%);
+  background: #fff;
 }
 
 .home-featured::before {
