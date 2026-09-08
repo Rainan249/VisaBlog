@@ -133,7 +133,7 @@ onUnmounted(() => {
       </ul>
 
       <p class="motto">Motto: 立志成为一个糕手</p>
-      <p class="spoiler" title="鼠标悬停揭晓">小声说：站里不少细节是我和 AI 一起熬夜调出来的</p>
+      <p class="spoiler" title="鼠标悬停揭晓">小声bb：我的小博客都是ai出来的</p>
 
       <div class="divider" />
 
