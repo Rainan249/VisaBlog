@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { Sunny, Moon } from "@element-plus/icons-vue";
 import { useTheme } from "../lib/useTheme";
+import avatar from "../assets/头像.jpg";
 
 const route = useRoute();
 const { isDark, toggle } = useTheme();
@@ -61,7 +62,10 @@ onUnmounted(() => {
 <template>
   <nav class="navbar" :class="{ capsule: isCapsule }">
     <div class="nav-inner">
-      <router-link :to="{ name: 'home' }" class="nav-logo">Rainan's Blog</router-link>
+      <router-link :to="{ name: 'home' }" class="nav-logo">
+        <img :src="avatar" alt="avatar" class="nav-avatar" />
+        <span>Rainan's Blog</span>
+      </router-link>
       <div class="nav-right">
         <div class="nav-links">
           <router-link
@@ -189,10 +193,22 @@ onUnmounted(() => {
 }
 
 .nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 1.15rem;
   font-weight: 700;
   color: #333;
   text-decoration: none;
+}
+
+.nav-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0, 47, 167, 0.2);
 }
 
 .nav-logo:hover {

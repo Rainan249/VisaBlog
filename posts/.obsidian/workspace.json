@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "02 - areas/学业发展/code/JavaWeb/001-030.前端web基础.md",
+                "file": "02 - areas/学业发展/code/JavaWeb/031-073.后端web基础.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "001-030.前端web基础"
+              "title": "031-073.后端web基础"
             }
           }
         ]
@@ -187,6 +187,7 @@
   },
   "active": "e9deb7c744d4ea44",
   "lastOpenFiles": [
+    "02 - areas/学业发展/code/JavaWeb/001-030.前端web基础.md",
     "python.md",
     "images/Pasted image 20260401210013.png",
     "03 - resources/小小储物袋/Picture",
