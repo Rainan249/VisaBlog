@@ -8,7 +8,7 @@ import avatar from "../assets/头像.jpg";
 const route = useRoute();
 const { isDark, toggle } = useTheme();
 const isCapsule = ref(false);
-const capsuleRoutes = new Set(["home", "blog", "gallery", "about"]);
+const capsuleRoutes = new Set(["home", "blog", "gallery", "about", "tag"]);
 const links = [
   { path: "/", label: "HOME" },
   { path: "/blog", label: "BLOG" },
@@ -200,6 +200,18 @@ onUnmounted(() => {
   font-weight: 700;
   color: #333;
   text-decoration: none;
+}
+
+.nav-logo span {
+  transition: opacity 0.25s ease, max-width 0.25s ease;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.navbar.capsule .nav-logo span {
+  opacity: 0;
+  max-width: 0;
 }
 
 .nav-avatar {

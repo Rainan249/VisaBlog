@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { getAllPosts } from "../lib/posts";
+import { ref, computed, onMounted, watch } from "vue";
+import {
+  getAllPosts,
+  getAllPostsWithContent,
+  groupByYearMonth,
+} from "../lib/posts";
 import type { PostMeta } from "../lib/posts";
 import CursorTrail from "../components/CursorTrail.vue";
 
@@ -18,52 +22,105 @@ const tags = computed(() => {
   return Array.from(set).sort();
 });
 
+/* ===== 全文搜索（fuse.js 懒加载） ===== */
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let fuse: any = null;
+let fuseLoading = false;
+const searchResults = ref<PostMeta[] | null>(null);
+
+function stripMarkdown(content: string): string {
+  return content
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/!?\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/[#>*`|~]+/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+async function runSearch(q: string) {
+  const query = q.trim();
+  if (!query) {
+    searchResults.value = null;
+    return;
+  }
+
+  if (!fuse && !fuseLoading) {
+    fuseLoading = true;
+    const { default: Fuse } = await import("fuse.js");
+    fuse = new Fuse(
+      getAllPostsWithContent().map((p) => ({
+        ...p,
+        plain: stripMarkdown(p.content),
+      })),
+      {
+        keys: [
+          { name: "title", weight: 3 },
+          { name: "tags", weight: 2 },
+          { name: "plain", weight: 1 },
+        ],
+        threshold: 0.35,
+        ignoreLocation: true,
+        includeMatches: true,
+        minMatchCharLength: 2,
+      }
+    );
+    fuseLoading = false;
+  }
+  while (fuseLoading) await new Promise((r) => setTimeout(r, 50));
+
+  searchResults.value = fuse.search(query).map(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (r: any) => r.item as PostMeta
+  );
+}
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+watch(searchQuery, (q) => {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => runSearch(q), 200);
+});
+
+const snippets = computed(() => {
+  const q = searchQuery.value.trim();
+  const map: Record<string, string> = {};
+  if (!q || !searchResults.value) return map;
+
+  const withContent = getAllPostsWithContent();
+  for (const p of searchResults.value) {
+    const plain = stripMarkdown(
+      withContent.find((x) => x.slug === p.slug)?.content ?? ""
+    );
+    const i = plain.toLowerCase().indexOf(q.toLowerCase());
+    map[p.slug] =
+      i >= 0
+        ? (i > 30 ? "…" : "") +
+          plain.slice(Math.max(0, i - 30), i + q.length + 70).trim() +
+          "…"
+        : plain.slice(0, 90).trim() + "…";
+  }
+  return map;
+});
+
 const filteredPosts = computed(() => {
-  let list = allPosts;
+  let list = searchResults.value ?? allPosts;
   if (activeTag.value) {
     list = list.filter((p) => p.tags.includes(activeTag.value));
-  }
-  const q = searchQuery.value.trim().toLowerCase();
-  if (q) {
-    list = list.filter(
-      (p) =>
-        p.title.toLowerCase().includes(q) ||
-        p.tags.some((t) => t.toLowerCase().includes(q))
-    );
   }
   return list;
 });
 
-const groupedPosts = computed(() => {
-  // year → month → posts[]
-  const yearMap = new Map<number, Map<string, PostMeta[]>>();
-  const monthNames = ["", "一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
-  const monthEn = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const groupedPosts = computed(() => groupByYearMonth(filteredPosts.value));
 
-  for (const post of filteredPosts.value) {
-    const [y, m] = post.date.split("-");
-    const year = Number(y);
-    const monthKey = m;
-
-    if (!yearMap.has(year)) yearMap.set(year, new Map());
-    const monthMap = yearMap.get(year)!;
-    if (!monthMap.has(monthKey)) monthMap.set(monthKey, []);
-    monthMap.get(monthKey)!.push(post);
-  }
-
-  // 排序：年份降序，月份降序
-  const result: { year: number; months: { key: string; label: string; posts: PostMeta[] }[] }[] = [];
-  for (const [year, monthMap] of Array.from(yearMap.entries()).sort((a, b) => b[0] - a[0])) {
-    const months = Array.from(monthMap.entries())
-      .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([key, posts]) => ({
-        key,
-        label: `${monthNames[Number(key)]} · ${monthEn[Number(key)]}`,
-        posts,
-      }));
-    result.push({ year, months });
-  }
-  return result;
+const stats = computed(() => {
+  const tagSet = new Set<string>();
+  allPosts.forEach((p) => p.tags.forEach((t) => tagSet.add(t)));
+  const years = groupByYearMonth(allPosts);
+  return {
+    total: allPosts.length,
+    tagCount: tagSet.size,
+    yearCount: years.length,
+  };
 });
 
 function selectTag(tag: string) {
@@ -96,6 +153,12 @@ function selectTag(tag: string) {
       <p>Recording the bits and pieces of life</p>
     </header>
 
+    <div class="stats-bar">
+      <span class="stat"><b>{{ stats.total }}</b> 篇文章</span>
+      <span class="stat"><b>{{ stats.tagCount }}</b> 个标签</span>
+      <span class="stat"><b>{{ stats.yearCount }}</b> 年跨度</span>
+    </div>
+
     <!-- 标签筛选 -->
     <div class="tag-bar" v-if="tags.length > 0">
       <button
@@ -121,10 +184,20 @@ function selectTag(tag: string) {
           <!-- 月份 -->
           <h3 class="month-header">{{ month.label }}</h3>
           <ul class="timeline-list">
-            <li v-for="post in month.posts" :key="post.slug" class="timeline-item">
-              <span class="item-day">{{ Number(post.date.slice(8)) }}</span>
-              <a :href="`/blog/${post.slug}`" target="_blank" class="item-title">{{ post.title }}</a>
-              <span v-for="tag in post.tags" :key="tag" class="item-tag">{{ tag }}</span>
+            <li
+              v-for="post in month.posts"
+              :key="post.slug"
+              class="timeline-item"
+              :class="{ 'has-snippet': snippets[post.slug] }"
+            >
+              <div class="timeline-row">
+                <span class="item-day">{{ Number(post.date.slice(8)) }}</span>
+                <RouterLink :to="`/blog/${post.slug}`" target="_blank" class="item-title">{{ post.title }}</RouterLink>
+                <span v-for="tag in post.tags" :key="tag" class="item-tag">
+                  <RouterLink :to="`/tags/${encodeURIComponent(tag)}`" class="item-tag-link">{{ tag }}</RouterLink>
+                </span>
+              </div>
+              <p v-if="snippets[post.slug]" class="item-snippet">{{ snippets[post.slug] }}</p>
             </li>
           </ul>
         </template>
@@ -159,9 +232,30 @@ function selectTag(tag: string) {
 }
 
 .blog-header p {
-  color: #666;
+  color: var(--text-secondary);
   margin: 0;
   font-size: 1.05rem;
+}
+
+/* ===== 统计条 ===== */
+
+.stats-bar {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 24px;
+  padding: 12px 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  font-size: 0.88rem;
+  color: var(--text-tertiary);
+}
+
+.stats-bar b {
+  color: var(--accent);
+  font-weight: 700;
+  margin-right: 3px;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ===== 标签栏 ===== */
@@ -172,29 +266,29 @@ function selectTag(tag: string) {
   gap: 8px;
   margin-bottom: 32px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border);
 }
 
 .tag-btn {
   padding: 6px 16px;
   border-radius: 20px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border);
   background: transparent;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.95rem;
   cursor: none;
   transition: all 0.2s;
 }
 
 .tag-btn:hover {
-  border-color: #002fa7;
-  color: #002fa7;
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .tag-btn.active {
-  background: #002fa7;
-  border-color: #002fa7;
-  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
 }
 
 /* ===== 搜索框 ===== */
@@ -211,8 +305,8 @@ function selectTag(tag: string) {
   height: 40px;
   border-radius: 50%;
   border: none;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-  color: #555;
+  background: var(--chip-gradient);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -223,9 +317,9 @@ function selectTag(tag: string) {
 }
 
 .search-toggle:hover {
-  background: linear-gradient(135deg, #e8f0fe 0%, #d2e3fc 100%);
-  color: #002fa7;
-  box-shadow: 0 4px 12px rgba(0, 47, 167, 0.2);
+  background: var(--chip-gradient-hover);
+  color: var(--accent);
+  box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.2);
   transform: scale(1.08);
 }
 
@@ -234,9 +328,9 @@ function selectTag(tag: string) {
 }
 
 .search-wrapper:hover .search-toggle {
-  background: linear-gradient(135deg, #002fa7 0%, #1557b0 100%);
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(0, 47, 167, 0.35);
+  background: var(--chip-gradient-strong);
+  color: var(--bg);
+  box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.35);
 }
 
 .search-glass {
@@ -251,10 +345,10 @@ function selectTag(tag: string) {
   margin-left: 0;
   border: none;
   border-bottom: 2px solid transparent;
-  background: #fff;
+  background: var(--card-bg);
   font-size: 0.875rem;
   outline: none;
-  color: #333;
+  color: var(--text);
   border-radius: 20px;
   overflow: hidden;
   white-space: nowrap;
@@ -275,8 +369,8 @@ function selectTag(tag: string) {
   margin-left: 8px;
   opacity: 1;
   pointer-events: auto;
-  border-bottom-color: #002fa7;
-  box-shadow: 0 2px 12px rgba(0, 47, 167, 0.12);
+  border-bottom-color: var(--accent);
+  box-shadow: 0 2px 12px rgba(var(--accent-rgb), 0.12);
 }
 
 .search-input::placeholder {
@@ -294,7 +388,7 @@ function selectTag(tag: string) {
 .year-header {
   font-size: 2rem;
   font-weight: 800;
-  color: #222;
+  color: var(--text);
   margin: 32px 0 4px;
   letter-spacing: -0.02em;
 }
@@ -305,7 +399,7 @@ function selectTag(tag: string) {
   position: relative;
   font-size: 1.05rem;
   font-weight: 600;
-  color: #666;
+  color: var(--text-secondary);
   margin: 16px 0 6px;
   padding-left: 12px;
 }
@@ -318,7 +412,7 @@ function selectTag(tag: string) {
   bottom: 3px;
   width: 2.5px;
   border-radius: 2px;
-  background: #002fa7;
+  background: var(--accent);
 }
 
 /* ===== 文章列表 ===== */
@@ -330,11 +424,29 @@ function selectTag(tag: string) {
 }
 
 .timeline-item {
+  padding: 5px 0;
+  line-height: 1.5;
+}
+
+.timeline-item.has-snippet {
+  padding: 10px 0;
+}
+
+.timeline-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 5px 0;
-  line-height: 1.5;
+}
+
+.item-snippet {
+  margin: 4px 0 0 34px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .item-day {
@@ -351,7 +463,7 @@ function selectTag(tag: string) {
   flex: 1;
   min-width: 0;
   font-size: 1.05rem;
-  color: #333;
+  color: var(--text);
   text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -360,7 +472,7 @@ function selectTag(tag: string) {
 }
 
 .item-title:hover {
-  color: #002fa7;
+  color: var(--accent);
   text-decoration: underline;
 }
 
@@ -370,9 +482,19 @@ function selectTag(tag: string) {
   color: #999;
 }
 
+.item-tag-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.item-tag-link:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+
 .empty {
   text-align: center;
-  color: #999;
+  color: var(--text-tertiary);
   padding: 40px 0;
 }
 </style>

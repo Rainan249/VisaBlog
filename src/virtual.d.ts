@@ -3,6 +3,7 @@ declare module "virtual:md-create-times" {
   export default times;
 }
 
+declare module "@waline/client/style";
 declare module "virtual:gallery-data" {
   interface GallerySubcategory {
     name: string;
@@ -14,4 +15,13 @@ declare module "virtual:gallery-data" {
   }
   const data: GalleryCategory[];
   export default data;
+}
+
+interface ImportMetaEnv {
+  readonly VITE_SITE_URL?: string;
+  readonly VITE_WALINE_SERVER?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
 }

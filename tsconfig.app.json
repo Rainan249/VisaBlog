@@ -6,7 +6,8 @@
     "allowArbitraryExtensions": true,
     "ignoreDeprecations": "5.0",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "marked-katex-extension": ["./src/types/marked-katex-extension.d.ts"]
     },
 
     /* Linting */

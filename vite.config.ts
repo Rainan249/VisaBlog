@@ -3,8 +3,106 @@ import vue from "@vitejs/plugin-vue";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs";
 import path from "node:path";
+import matter from "gray-matter";
 
 const IMG_DIR = "03 - resources/小小储物袋/Picture";
+const SITE_URL = (process.env.VITE_SITE_URL || "").replace(/\/$/, "");
+
+function collectPosts(): { slug: string; title: string; date: string; excerpt: string }[] {
+  const postsDir = path.join(process.cwd(), "posts");
+  const result: { slug: string; title: string; date: string; excerpt: string }[] = [];
+
+  function walk(dir: string) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === ".obsidian") continue;
+        walk(full);
+      } else if (entry.name.endsWith(".md")) {
+        const slug = path.relative(postsDir, full).replace(/\.md$/, "").replace(/\\/g, "/");
+        const { data, content } = matter(fs.readFileSync(full, "utf-8"));
+        const excerpt = content
+          .replace(/```[\s\S]*?```/g, " ")
+          .replace(/!?\[[^\]]*\]\([^)]*\)/g, " ")
+          .replace(/[#>*`|~]/g, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 200);
+        result.push({
+          slug,
+          title: data.title || slug.split("/").pop() || slug,
+          date: data.date ? new Date(data.date).toISOString() : fs.statSync(full).mtime.toISOString(),
+          excerpt,
+        });
+      }
+    }
+  }
+  walk(postsDir);
+  return result.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 20);
+}
+
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function buildRssXml(posts: { slug: string; title: string; date: string; excerpt: string }[]): string {
+  const items = posts.slice(0, 20)
+    .map(
+      (p) => `    <item>
+      <title>${escapeXml(p.title)}</title>
+      <link>${SITE_URL}/blog/${encodeURI(p.slug)}</link>
+      <guid>${SITE_URL}/blog/${encodeURI(p.slug)}</guid>
+      <pubDate>${new Date(p.date).toUTCString()}</pubDate>
+      <description>${escapeXml(p.excerpt)}</description>
+    </item>`
+    )
+    .join("\n");
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Rainan's ink</title>
+    <link>${SITE_URL}</link>
+    <description>Recording the bits and pieces of life</description>
+    <language>zh-CN</language>
+    <atom:link href="${SITE_URL}/rss.xml" rel="self" type="application/rss+xml"/>
+${items}
+  </channel>
+</rss>`;
+}
+
+function buildSitemapXml(posts: { slug: string; date: string }[]): string {
+  const staticPaths = ["/", "/blog", "/gallery", "/about"];
+  const entries = [
+    ...staticPaths.map((p) => ({ loc: p, lastmod: "" })),
+    ...posts.map((p) => ({ loc: `/blog/${encodeURI(p.slug)}`, lastmod: p.date.split("T")[0] })),
+  ];
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${entries
+  .map(
+    (e) =>
+      `  <url>\n    <loc>${SITE_URL}${e.loc}</loc>${
+        e.lastmod ? `\n    <lastmod>${e.lastmod}</lastmod>` : ""
+      }\n  </url>`
+  )
+  .join("\n")}
+</urlset>`;
+}
+
+function buildRobotsTxt(): string {
+  return `User-agent: *
+Allow: /
+
+Sitemap: ${SITE_URL}/sitemap.xml
+`;
+}
 
 // 扫描 public/gallery 目录，自动生成 gallery 数据
 function scanGalleryData(): { name: string; subcategories: { name: string; images: string[] }[] }[] {
@@ -141,6 +239,12 @@ export default defineConfig({
               fs.copyFileSync(srcFile, path.join(destDir, file));
             }
           }
+        }
+        if (SITE_URL) {
+          const posts = collectPosts();
+          fs.writeFileSync(path.join(process.cwd(), "dist", "rss.xml"), buildRssXml(posts));
+          fs.writeFileSync(path.join(process.cwd(), "dist", "sitemap.xml"), buildSitemapXml(posts));
+          fs.writeFileSync(path.join(process.cwd(), "dist", "robots.txt"), buildRobotsTxt());
         }
       },
     },

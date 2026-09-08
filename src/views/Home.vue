@@ -268,10 +268,31 @@ function updateHeroInteraction(clientX: number, clientY: number) {
   });
 }
 
+const homeQuote = ref({
+  text: "花开堪折直须折，莫待无花空折枝",
+  from: "《金缕衣》 · 唐 · 杜秋娘",
+});
+
 onMounted(() => {
   document.title = "HOME · Rainan's ink";
   updateTime();
   timer = setInterval(updateTime, 1000);
+  fetch("https://v1.hitokoto.cn/?c=i&c=d&c=k&max_length=30")
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data) => {
+      if (!data?.hitokoto) return;
+      let source = data.from ?? "";
+      if (data.from_who) {
+        source = data.from.includes("《")
+          ? `${data.from_who} ${data.from}`
+          : `${data.from_who}《${data.from}》`;
+      }
+      homeQuote.value = {
+        text: data.hitokoto,
+        from: source ? `—— ${source}` : "—— 一言",
+      };
+    })
+    .catch(() => {});
   const page = pageRef.value;
   window.addEventListener("mousemove", onMouseMove, { passive: true });
   page?.addEventListener("scroll", onScroll, { passive: true });
@@ -420,6 +441,17 @@ onUnmounted(() => {
             </div>
           </a>
         </article>
+
+        <footer class="home-quote">
+          <div class="quote-pill">
+            <span class="quote-dot">
+              <span class="quote-dot-ping"></span>
+              <span class="quote-dot-core"></span>
+            </span>
+            <p class="quote-text">{{ homeQuote.text }}</p>
+          </div>
+          <p class="quote-src">{{ homeQuote.from }}</p>
+        </footer>
       </div>
     </section>
   </main>
@@ -1273,5 +1305,82 @@ onUnmounted(() => {
   .reveal-layer { transition: opacity 0.2s ease; }
   .trail-layer { display: none; }
   .hero { transition: none; transform: none; }
+  .quote-dot-ping { animation: none; opacity: 0.4; }
+}
+
+/* ===== 底部名言（胶囊徽章式，仿主题 Quote 组件） ===== */
+.home-quote {
+  width: min(600px, 100%);
+  margin: 16px auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0 24px;
+}
+
+.quote-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 22px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.quote-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+}
+
+.quote-dot-core {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #4ade80;
+}
+
+.quote-dot-ping {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #4ade80;
+  opacity: 0.75;
+  animation: quote-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes quote-ping {
+  75%,
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.quote-text {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.quote-src {
+  margin: 10px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+}
+
+.home-page.dark .quote-pill {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.home-page.dark .quote-src {
+  color: var(--text-tertiary);
 }
 </style>

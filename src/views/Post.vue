@@ -2,68 +2,143 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { useRoute } from "vue-router";
 import { getPostBySlug } from "../lib/posts";
-import { marked } from "marked";
+import { renderMarkdown } from "../lib/markdown";
 import { ElProgress } from "element-plus";
 import hljs from "highlight.js";
+import mediumZoom, { type Zoom } from "medium-zoom";
 import "highlight.js/styles/github-dark-dimmed.min.css";
+import { useTheme } from "../lib/useTheme";
 
 const route = useRoute();
-const slug = route.params.slug as string;
-const post = getPostBySlug(slug);
+const { isDark } = useTheme();
 
-if (post) {
-  document.title = `${post.title} · Rainan's ink`;
+const post = ref(getPostBySlug(route.params.slug as string));
+const html = ref("");
+
+const currentUrl = computed(() => {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return `${origin}/blog/${post.value?.slug ?? ""}`;
+});
+
+const reading = computed(() => {
+  const content = post.value?.content ?? "";
+  const text = content
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/!?\[[^\]]*\]\([^)]*\)/g, " ");
+  const cjk = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+  const words = (text.replace(/[\u4e00-\u9fa5]/g, " ").match(/[A-Za-z0-9]+/g) || [])
+    .length;
+  const chars = cjk + words;
+  return { chars, minutes: Math.max(1, Math.round(chars / 400)) };
+});
+
+/* ========================================
+   Waline 评论
+   ======================================== */
+
+const walineServer = import.meta.env.VITE_WALINE_SERVER;
+const walineEl = ref<HTMLElement | null>(null);
+let waline: { update?: (o?: object) => void; destroy: () => void } | null = null;
+
+async function mountWaline() {
+  waline?.destroy();
+  waline = null;
+  if (!walineServer || !walineEl.value) return;
+
+  const { init } = await import("@waline/client");
+  await import("@waline/client/style");
+  waline = init({
+    el: walineEl.value,
+    serverURL: walineServer,
+    path: `/blog/${post.value?.slug ?? ""}`,
+    pageview: true,
+    dark: document.documentElement.classList.contains("dark")
+      ? "html.dark"
+      : false,
+  });
 }
 
-// 处理 Obsidian 的 ![[file.png]] 图片语法 → 标准 markdown
-const processed = (post?.content || "")
-  .replace(
-    /!\[\[([^\]]+\.(png|jpg|jpeg|gif|svg|webp|bmp))\]\]/gi,
-    (_match, filename) => `![${filename}](${encodeURI(filename)})`
+/* ========================================
+   返回顶部
+   ======================================== */
+
+const showTop = ref(false);
+
+function onScroll() {
+  showTop.value = window.scrollY > 400;
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+let zoom: Zoom | null = null;
+
+async function enhanceRepoCards() {
+  const cards = document.querySelectorAll<HTMLElement>(".gh-repo-card[data-repo]");
+  await Promise.all(
+    Array.from(cards).map(async (card) => {
+      const repo = card.dataset.repo ?? "";
+      try {
+        const res = await fetch(`https://api.github.com/repos/${repo}`);
+        if (!res.ok) throw new Error(String(res.status));
+        const d = await res.json();
+        const desc = card.querySelector(".gh-repo-desc");
+        if (desc) desc.textContent = d.description || "GitHub 仓库";
+        const stars = card.querySelector(".gh-repo-stars");
+        if (stars) stars.textContent = `★ ${d.stargazers_count ?? 0}`;
+        const forks = card.querySelector(".gh-repo-forks");
+        if (forks) forks.textContent = `⑂ ${d.forks_count ?? 0}`;
+        const lang = card.querySelector(".gh-repo-lang");
+        if (lang) lang.textContent = d.language ?? "";
+      } catch {
+        const stars = card.querySelector(".gh-repo-stars");
+        if (stars) stars.textContent = "";
+        const forks = card.querySelector(".gh-repo-forks");
+        if (forks) forks.textContent = "";
+      }
+    })
   );
+}
 
-const rawHtml = (marked.parse(processed || "") as string);
-
-// 将 markdown 中的相对图片路径转为绝对路径
-let html = rawHtml.replace(
-  /<img\s+([^>]*?)src=(['"])((?!\/|http|data:)[^'"]+)\2/g,
-  '<img $1src="/images/$3"'
-);
-
-// 为所有链接添加 target="_blank"
-html = html.replace(
-  /<a\s+([^>]*?)>/g,
-  (match, attrs) => {
-    if (/target=/.test(attrs)) return match;
-    return `<a ${attrs} target="_blank" rel="noopener noreferrer">`;
+async function renderAndEnhance() {
+  if (!post.value) {
+    html.value = "";
+    return;
   }
-);
+  html.value = await renderMarkdown(post.value.content);
+  await nextTick();
 
-// 为代码块添加语言标签和复制按钮
-html = html.replace(
-  /<pre><code class="language-(\w+)">([\s\S]*?)<\/code><\/pre>/g,
-  (_, lang, code) => {
-    // code 已被 marked HTML 转义，直接用于显示
-    // 复制时需解码 HTML 实体
-    return `<div class="code-block-wrap">
-      <div class="code-block-header">
-        <span class="code-lang">${lang}</span>
-        <button class="code-copy-btn" data-code="${encodeURIComponent(code)}" onclick="
-          var ta=document.createElement('textarea');
-          ta.innerHTML=decodeURIComponent(this.getAttribute('data-code'));
-          ta.value=ta.textContent||ta.innerText||'';
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          document.body.removeChild(ta);
-          this.textContent='✓ Copied';
-          setTimeout(()=>{this.textContent='Copy';},1200);
-        ">Copy</button>
-      </div>
-      <pre><code class="language-${lang}">${code}</code></pre>
-    </div>`;
+  document.querySelectorAll(".post-content pre code").forEach((el) => {
+    hljs.highlightElement(el as HTMLElement);
+  });
+
+  enhanceRepoCards();
+
+  zoom?.detach();
+  zoom = mediumZoom(".post-content img", {
+    background: "rgba(0, 0, 0, 0.75)",
+    margin: 24,
+  });
+}
+
+async function loadPost(slug: string) {
+  post.value = getPostBySlug(slug);
+  observer?.disconnect();
+
+  if (post.value) {
+    document.title = `${post.value.title} · Rainan's ink`;
+    await renderAndEnhance();
+    tocItems.value = buildToc();
+    collapsedGroups.value = new Set(collectParentIds(tocItems.value));
+    activeId.value = "";
+    setupObserver();
+    await mountWaline();
+  } else {
+    html.value = "";
+    tocItems.value = [];
   }
-);
+}
 
 /* ========================================
    Table of Contents
@@ -320,32 +395,24 @@ const tocProgress = computed(() => {
    Lifecycle
    ======================================== */
 
-// Initialise on mount — default collapsed so the left rail stays compact on pageload
-onMounted(async () => {
-  await nextTick();
-  tocItems.value = buildToc();
-  collapsedGroups.value = new Set(collectParentIds(tocItems.value));
-  setupObserver();
-  // 代码高亮
-  document.querySelectorAll(".post-content pre code").forEach((el) => {
-    hljs.highlightElement(el as HTMLElement);
-  });
+onMounted(() => {
+  loadPost(route.params.slug as string);
+  window.addEventListener("scroll", onScroll, { passive: true });
 });
 
 // Rebuild TOC when navigating to another post (component reuse)
 watch(
   () => route.params.slug,
-  async () => {
-    await nextTick();
-    tocItems.value = buildToc();
-    collapsedGroups.value = new Set(collectParentIds(tocItems.value));
-    activeId.value = "";
-    setupObserver();
+  (slug) => {
+    loadPost(slug as string);
   }
 );
 
 onUnmounted(() => {
   observer?.disconnect();
+  window.removeEventListener("scroll", onScroll);
+  zoom?.detach();
+  waline?.destroy();
 });
 
 // Auto-scroll sidebar to center the active item
@@ -416,7 +483,7 @@ watch(activeId, (id) => {
             :percentage="tocProgress.percent"
             :stroke-width="2"
             :show-text="false"
-            color="#002fa7"
+            :color="isDark ? '#82aaff' : '#002fa7'"
           />
         </div>
       </div>
@@ -531,11 +598,36 @@ watch(activeId, (id) => {
         <h1>{{ post.title }}</h1>
         <div class="post-meta">
           <time>{{ post.date }}</time>
-          <span v-for="tag in post.tags" :key="tag" class="tag">{{ tag }}</span>
+          <span>共 {{ reading.chars }} 字 · 约 {{ reading.minutes }} 分钟</span>
+          <span v-for="tag in post.tags" :key="tag" class="tag">
+            <RouterLink :to="`/tags/${encodeURIComponent(tag)}`" class="tag-link">{{ tag }}</RouterLink>
+          </span>
         </div>
       </header>
       <div ref="contentRef" class="post-content" v-html="html"></div>
+
+      <div class="post-footer">
+        <div class="post-copyright">
+          <p><strong>本文作者</strong>Rainan</p>
+          <p><strong>本文链接</strong><a :href="currentUrl">{{ currentUrl }}</a></p>
+          <p><strong>版权声明</strong>本博客所有文章除特别声明外，均采用 CC BY-NC-SA 4.0 许可协议，转载请注明出处！</p>
+        </div>
+        <div v-if="walineServer" ref="walineEl" class="post-comments"></div>
+      </div>
     </article>
+
+    <!-- 返回顶部 -->
+    <button
+      class="back-to-top"
+      v-show="showTop"
+      @click="scrollToTop"
+      aria-label="返回顶部"
+      title="返回顶部"
+    >
+      <svg width="18" height="18" viewBox="0 0 18 18">
+        <path d="M4 11L9 6l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
 
     <!-- Mobile floating TOC button -->
     <button
@@ -573,7 +665,7 @@ watch(activeId, (id) => {
                 :percentage="tocProgress.percent"
                 :stroke-width="2"
                 :show-text="false"
-                color="#002fa7"
+                :color="isDark ? '#82aaff' : '#002fa7'"
               />
             </div>
 
@@ -734,15 +826,25 @@ watch(activeId, (id) => {
   align-items: center;
   gap: 12px;
   font-size: 0.875rem;
-  color: #888;
+  color: var(--text-tertiary);
 }
 
 .tag {
-  background: #f0f0f0;
+  background: var(--tag-bg);
   padding: 2px 10px;
   border-radius: 12px;
   font-size: 0.8rem;
-  color: #555;
+  color: var(--text-secondary);
+}
+
+.tag-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.tag-link:hover {
+  color: var(--accent);
+  text-decoration: none;
 }
 
 .post-content {
@@ -760,22 +862,22 @@ watch(activeId, (id) => {
   font-size: 1.8rem;
   margin: 40px 0 20px;
   padding-bottom: 10px;
-  border-bottom: 2px solid rgba(0, 47, 167, 0.2);
-  color: #002fa7;
+  border-bottom: 2px solid rgba(var(--accent-rgb), 0.2);
+  color: var(--accent);
 }
 
 .post-content :deep(h2) {
   font-size: 1.4rem;
   margin: 32px 0 16px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(0, 47, 167, 0.2);
-  color: #002fa7;
+  border-bottom: 1px solid rgba(var(--accent-rgb), 0.2);
+  color: var(--accent);
 }
 
 .post-content :deep(h3) {
   font-size: 1.2rem;
   margin: 24px 0 12px;
-  color: #3a5ccc;
+  color: var(--accent-soft);
 }
 
 .post-content :deep(p) {
@@ -783,7 +885,7 @@ watch(activeId, (id) => {
 }
 
 .post-content :deep(code) {
-  background: #f4f4f4;
+  background: var(--code-inline-bg);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.9em;
@@ -846,9 +948,9 @@ watch(activeId, (id) => {
 .post-content :deep(blockquote) {
   margin: 16px 0;
   padding: 12px 16px;
-  border-left: 1px solid rgba(0, 47, 167, 0.35);
-  background: #f8f9fa;
-  color: #555;
+  border-left: 1px solid rgba(var(--accent-rgb), 0.35);
+  background: var(--blockquote-bg);
+  color: var(--text-secondary);
 }
 
 .post-content :deep(ul),
@@ -862,7 +964,7 @@ watch(activeId, (id) => {
 }
 
 .post-content :deep(a) {
-  color: #002fa7;
+  color: var(--accent);
 }
 
 .post-content :deep(img) {
@@ -896,6 +998,70 @@ watch(activeId, (id) => {
 
 .post-content :deep(tr:nth-child(even)) {
   background: var(--bg-secondary, #fafafa);
+}
+
+/* ===== 文末版权 & 评论 ===== */
+
+.post-footer {
+  margin-top: 48px;
+}
+
+.post-copyright {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  padding: 14px 18px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.post-copyright p {
+  margin: 0;
+}
+
+.post-copyright strong {
+  margin-right: 10px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.post-copyright a {
+  color: var(--accent);
+  word-break: break-all;
+}
+
+.post-comments {
+  margin-top: 32px;
+}
+
+/* ========================================
+   Back to top
+   ======================================== */
+
+.back-to-top {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  z-index: 997;
+  transition: color 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.back-to-top:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  transform: translateY(-2px);
 }
 
 /* ========================================
@@ -966,24 +1132,24 @@ watch(activeId, (id) => {
   justify-content: center;
   width: 22px;
   height: 22px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border);
   border-radius: 4px;
-  background: #fff;
-  color: #aaa;
+  background: var(--card-bg);
+  color: var(--text-tertiary);
   padding: 0;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 
 .toc-action-btn:hover {
-  color: #002fa7;
-  border-color: #002fa7;
-  background: rgba(0, 47, 167, 0.04);
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.04);
 }
 
 .toc-action-btn.active {
-  color: #002fa7;
-  border-color: #002fa7;
-  background: rgba(0, 47, 167, 0.06);
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.06);
 }
 
 /* ---------- Progress bar ---------- */
@@ -993,7 +1159,7 @@ watch(activeId, (id) => {
 }
 
 .toc-progress-bar :deep(.el-progress-bar__outer) {
-  background: #eee;
+  background: var(--border);
   border-radius: 1px;
 }
 
@@ -1172,10 +1338,10 @@ watch(activeId, (id) => {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: #002fa7;
-  color: #fff;
+  background: var(--accent);
+  color: var(--bg);
   border: none;
-  box-shadow: 0 4px 16px rgba(0, 47, 167, 0.35);
+  box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.35);
   z-index: 998;
   align-items: center;
   justify-content: center;
@@ -1184,7 +1350,7 @@ watch(activeId, (id) => {
 
 .toc-mobile-fab:active {
   transform: scale(0.94);
-  box-shadow: 0 2px 8px rgba(0, 47, 167, 0.25);
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.25);
 }
 
 /* ========================================
@@ -1210,7 +1376,7 @@ watch(activeId, (id) => {
   bottom: 0;
   width: 280px;
   max-width: 85vw;
-  background: #fff;
+  background: var(--card-bg);
   padding: 20px 24px;
   overflow-y: auto;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
@@ -1227,19 +1393,19 @@ watch(activeId, (id) => {
 .toc-mobile-title {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #333;
+  color: var(--text);
 }
 
 .toc-counter--mobile {
   font-size: 0.72rem;
-  color: #aaa;
+  color: var(--text-tertiary);
 }
 
 .toc-mobile-close {
   margin-left: auto;
   background: none;
   border: none;
-  color: #999;
+  color: var(--text-secondary);
   padding: 4px;
   display: flex;
   align-items: center;
@@ -1249,8 +1415,8 @@ watch(activeId, (id) => {
 }
 
 .toc-mobile-close:hover {
-  color: #333;
-  background: #f0f0f0;
+  color: var(--text);
+  background: var(--bg-secondary);
 }
 
 .toc-progress-bar--mobile {
@@ -1269,17 +1435,17 @@ watch(activeId, (id) => {
   padding: 0 10px;
   font-size: 0.75rem;
   font-weight: 500;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
-  color: #666;
+  background: var(--card-bg);
+  color: var(--text-secondary);
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 
 .toc-action-btn--mobile:hover {
-  color: #002fa7;
-  border-color: #002fa7;
-  background: rgba(0, 47, 167, 0.04);
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.04);
 }
 
 /* Slide-in transition */
@@ -1333,6 +1499,10 @@ watch(activeId, (id) => {
 
   .toc-mobile-fab {
     display: flex;
+  }
+
+  .back-to-top {
+    bottom: 84px;
   }
 }
 </style>

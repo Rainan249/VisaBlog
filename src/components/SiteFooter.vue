@@ -40,7 +40,7 @@ onUnmounted(() => {
 
 <style scoped>
 .site-footer {
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border);
   padding: 0 24px;
 }
 
@@ -52,26 +52,14 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   font-size: 0.82rem;
-  color: #999;
+  color: var(--text-tertiary);
 }
 
 .runtime {
-  color: #888;
+  color: var(--text-secondary);
 }
 
 .copyright {
-  color: #aaa;
-}
-
-:root.dark .site-footer {
-  border-top-color: #2a2a3e;
-}
-
-:root.dark .runtime {
-  color: #888;
-}
-
-:root.dark .copyright {
-  color: #666;
+  color: var(--text-tertiary);
 }
 </style>

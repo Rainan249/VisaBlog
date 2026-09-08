@@ -9,11 +9,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@waline/client": "^3.15.2",
     "buffer": "^6.0.3",
     "element-plus": "^2.14.3",
+    "fuse.js": "^7.5.0",
     "gray-matter": "^4.0.3",
     "highlight.js": "^11.11.1",
+    "katex": "^0.18.7",
     "marked": "^18.0.6",
+    "marked-katex-extension": "^5.1.12",
+    "medium-zoom": "^1.1.0",
+    "simple-icons": "^16.30.0",
     "vue": "^3.5.39",
     "vue-router": "^5.2.0"
   },
