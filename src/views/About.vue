@@ -60,16 +60,16 @@ const milestones = [
 ];
 
 const poweredBy = [
-  { name: "Vue 3", href: "https://vuejs.org/" },
-  { name: "Vite", href: "https://vite.dev/" },
-  { name: "Obsidian", href: "https://obsidian.md/" },
-  { name: "Vercel", href: "https://vercel.com/" },
-  { name: "Waline", href: "https://waline.js.org/" },
-  { name: "marked", href: "https://marked.js.org/" },
-  { name: "highlight.js", href: "https://highlightjs.org/" },
-  { name: "Fuse.js", href: "https://fusejs.io/" },
-  { name: "KaTeX", href: "https://katex.org/" },
-  { name: "medium-zoom", href: "https://medium-zoom.francoischalifour.com/" },
+  "Vue 3",
+  "Vite",
+  "Obsidian",
+  "Vercel",
+  "Waline",
+  "marked",
+  "highlight.js",
+  "Fuse.js",
+  "KaTeX",
+  "medium-zoom",
 ];
 
 function updateTime() {
@@ -222,9 +222,7 @@ onUnmounted(() => {
       <h2 class="section-title">POWERED BY</h2>
       <p class="section-sub">本站由这些优秀的开源项目与平台驱动</p>
       <ul class="powered-grid">
-        <li v-for="p in poweredBy" :key="p.name">
-          <a :href="p.href" target="_blank" rel="noopener noreferrer" class="powered-link">{{ p.name }}</a>
-        </li>
+        <li v-for="p in poweredBy" :key="p" class="powered-item">{{ p }}</li>
       </ul>
     </section>
 
@@ -564,21 +562,13 @@ onUnmounted(() => {
   gap: 8px;
 }
 
-.powered-link {
-  display: block;
+.powered-item {
   padding: 8px 14px;
   border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 0.9rem;
   color: var(--text-secondary);
-  text-decoration: none;
-  transition: all 0.2s;
-}
-
-.powered-link:hover {
-  color: var(--accent);
-  border-color: rgba(var(--accent-rgb), 0.35);
-  text-decoration: none;
+  text-align: center;
 }
 
 /* ===== 运行时间 ===== */
