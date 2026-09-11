@@ -11,6 +11,7 @@ declare module "virtual:qq-music" {
     singerName: string;
     songMid: string;
     sum?: number;
+    cover?: string;
   }
   interface MonthTop {
     month?: string;
@@ -19,8 +20,9 @@ declare module "virtual:qq-music" {
     favSongMid?: string;
     favSongName?: string;
     favSingerName?: string;
-    repeatSong?: { songName?: string; songMid?: string; singerName?: string; count?: number; listenDate?: string };
-    midnightSong?: { songName?: string; songMid?: string; singerName?: string; hour?: number; month?: number };
+    favSongCover?: string;
+    repeatSong?: { songName?: string; songMid?: string; singerName?: string; count?: number; listenDate?: string; cover?: string };
+    midnightSong?: { songName?: string; songMid?: string; singerName?: string; hour?: number; month?: number; cover?: string };
   }
   const data: {
     monthData?: {

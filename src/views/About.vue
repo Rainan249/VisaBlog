@@ -165,11 +165,15 @@ const music = computed(() => {
     name: s.songName,
     sub: s.singerName,
     href: `https://i2.y.qq.com/a/song/${s.songMid}`,
+    cover: s.cover,
   }));
 
   const singers = (m.topSinger ?? []).slice(0, 3).map((s) => ({
     name: s.singerName,
     href: `https://i2.y.qq.com/a/singer/${s.singerMid}`,
+    avatar: s.singerMid
+      ? `https://y.gtimg.cn/music/photo_new/T001R300x300M000${s.singerMid}.jpg`
+      : undefined,
   }));
 
   const genres = (m.topGenre?.genre2Count ?? [])
@@ -187,13 +191,14 @@ const music = computed(() => {
     .slice()
     .sort((a, b) => (b.month ?? "").localeCompare(a.month ?? ""))[0];
 
-  const bests: { label: string; value: string; sub?: string; href?: string }[] = [];
+  const bests: { label: string; value: string; sub?: string; href?: string; cover?: string }[] = [];
   if (repeatEntry?.repeatSong?.songName) {
     bests.push({
       label: "单曲循环之最",
       value: repeatEntry.repeatSong.songName,
       sub: `循环 ${repeatEntry.repeatSong.count ?? "?"} 次`,
       href: songHref(repeatEntry.repeatSong.songMid),
+      cover: repeatEntry.repeatSong.cover,
     });
   }
   if (repeatEntry?.midnightSong?.songName) {
@@ -202,6 +207,7 @@ const music = computed(() => {
       value: repeatEntry.midnightSong.songName,
       sub: `${repeatEntry.midnightSong.hour ?? 0} 点`,
       href: songHref(repeatEntry.midnightSong.songMid),
+      cover: repeatEntry.midnightSong.cover,
     });
   }
   if (repeatEntry?.favSongName) {
@@ -210,6 +216,7 @@ const music = computed(() => {
       value: repeatEntry.favSongName,
       sub: repeatEntry.favSingerName,
       href: songHref(repeatEntry.favSongMid),
+      cover: repeatEntry.favSongCover,
     });
   }
   if (m.consDays?.topListen) {
@@ -394,16 +401,19 @@ onUnmounted(() => {
 
       <div v-if="music.bests.length" class="music-bests">
         <div v-for="b in music.bests" :key="b.label" class="best-card">
-          <span class="best-label">{{ b.label }}</span>
-          <a
-            v-if="b.href"
-            :href="b.href"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="best-value best-value--link"
-          >{{ b.value }}</a>
-          <span v-else class="best-value">{{ b.value }}</span>
-          <span v-if="b.sub" class="best-sub">{{ b.sub }}</span>
+          <img v-if="b.cover" :src="b.cover" alt="" class="best-cover" loading="lazy" />
+          <div class="best-body">
+            <span class="best-label">{{ b.label }}</span>
+            <a
+              v-if="b.href"
+              :href="b.href"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="best-value best-value--link"
+            >{{ b.value }}</a>
+            <span v-else class="best-value">{{ b.value }}</span>
+            <span v-if="b.sub" class="best-sub">{{ b.sub }}</span>
+          </div>
         </div>
       </div>
 
@@ -412,6 +422,7 @@ onUnmounted(() => {
           <p class="music-col-title">常听歌曲</p>
           <ul class="music-list">
             <li v-for="(s, i) in music.songs" :key="s.name">
+              <img v-if="s.cover" :src="s.cover" alt="" class="music-cover" loading="lazy" />
               <span class="music-rank">{{ i + 1 }}</span>
               <a :href="s.href" target="_blank" rel="noopener noreferrer" class="music-name">{{ s.name }}</a>
               <span class="music-sub">{{ s.sub }}</span>
@@ -422,6 +433,7 @@ onUnmounted(() => {
           <p class="music-col-title">常听歌手</p>
           <ul class="music-list">
             <li v-for="(s, i) in music.singers" :key="s.name">
+              <img v-if="s.avatar" :src="s.avatar" alt="" class="music-avatar" loading="lazy" />
               <span class="music-rank">{{ i + 1 }}</span>
               <a :href="s.href" target="_blank" rel="noopener noreferrer" class="music-name">{{ s.name }}</a>
             </li>
@@ -816,12 +828,27 @@ onUnmounted(() => {
 
 .best-card {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 10px;
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--bg-secondary);
+  min-width: 0;
+}
+
+.best-cover {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.best-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
   min-width: 0;
 }
 
@@ -899,6 +926,22 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   font-variant-numeric: tabular-nums;
+}
+
+.music-cover {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.music-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .music-name {
