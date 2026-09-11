@@ -726,7 +726,7 @@ onUnmounted(() => {
   padding: 64px 24px 120px;
   overflow: hidden;
   z-index: 2;
-  background: #fff;
+  background: hsl(210 33% 99%);
 }
 
 .home-featured::before {
@@ -1185,7 +1185,7 @@ onUnmounted(() => {
 }
 
 .home-page.dark .home-featured {
-  background: #161618;
+  background: hsl(240 20.54% 5.2%);
 }
 
 .home-page.dark .home-featured::before {
