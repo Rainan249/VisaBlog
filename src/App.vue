@@ -2,11 +2,13 @@
 import { useRoute } from "vue-router";
 import NavBar from "./components/NavBar.vue";
 import CustomCursor from "./components/CustomCursor.vue";
+import TopProgress from "./components/TopProgress.vue";
 
 const route = useRoute();
 </script>
 
 <template>
+  <TopProgress />
   <CustomCursor />
   <NavBar v-if="route.name !== 'post'" />
   <router-view />

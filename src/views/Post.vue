@@ -63,9 +63,22 @@ async function mountWaline() {
    ======================================== */
 
 const showTop = ref(false);
+const readProgress = ref(0);
 
 function onScroll() {
   showTop.value = window.scrollY > 400;
+
+  const el = contentRef.value;
+  if (!el) {
+    readProgress.value = 0;
+    return;
+  }
+  const rect = el.getBoundingClientRect();
+  const total = el.offsetHeight - window.innerHeight + 200;
+  const passed = 100 - rect.top;
+  readProgress.value = total > 0
+    ? Math.min(100, Math.max(0, (passed / total) * 100))
+    : 100;
 }
 
 function scrollToTop() {
@@ -445,6 +458,9 @@ watch(activeId, (id) => {
     :class="{ 'has-toc': tocItems.length > 0 }"
     v-if="post"
   >
+    <!-- 阅读进度 -->
+    <div class="reading-progress" :style="{ width: readProgress + '%' }"></div>
+
     <!-- Desktop Sidebar Table of Contents (left side) -->
     <aside class="toc-sidebar" v-if="tocItems.length > 0">
       <!-- Title row with progress & expand/collapse -->
@@ -604,7 +620,12 @@ watch(activeId, (id) => {
           </span>
         </div>
       </header>
-      <div ref="contentRef" class="post-content" v-html="html"></div>
+      <div v-if="!html" class="post-skeleton">
+        <div class="sk sk-title"></div>
+        <div class="sk sk-meta"></div>
+        <div class="sk sk-line" v-for="n in 7" :key="n" :style="{ width: 100 - ((n * 7) % 24) + '%' }"></div>
+      </div>
+      <div v-else ref="contentRef" class="post-content" v-html="html"></div>
 
       <div class="post-footer">
         <div class="post-copyright">
@@ -809,6 +830,62 @@ watch(activeId, (id) => {
 /* ========================================
    Post Header & Content
    ======================================== */
+
+/* 阅读进度条 */
+.reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.5);
+  z-index: 999;
+  transition: width 0.1s linear;
+  pointer-events: none;
+}
+
+/* 骨架屏 */
+.post-skeleton {
+  padding-top: 8px;
+}
+
+.sk {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--border) 25%,
+    var(--bg-secondary) 37%,
+    var(--border) 63%
+  );
+  background-size: 400% 100%;
+  animation: sk-shimmer 1.4s ease infinite;
+}
+
+.sk-title {
+  height: 34px;
+  width: 62%;
+  margin-bottom: 14px;
+}
+
+.sk-meta {
+  height: 14px;
+  width: 32%;
+  margin-bottom: 34px;
+}
+
+.sk-line {
+  height: 15px;
+  margin-bottom: 14px;
+}
+
+@keyframes sk-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
 
 .post-header {
   margin-bottom: 32px;

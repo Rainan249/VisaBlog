@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import CursorTrail from "../components/CursorTrail.vue";
 import avatar from "../assets/头像.jpg";
+import { getAllPosts, getAllPostsWithContent } from "../lib/posts";
 import {
   siSpringboot,
   siVuedotjs,
@@ -71,6 +72,79 @@ const poweredBy = [
   "KaTeX",
   "medium-zoom",
 ];
+
+/* ===== 写作统计 ===== */
+
+const writeStats = computed(() => {
+  const allPosts = getAllPosts();
+  const tagCount: Record<string, number> = {};
+  const yearCount: Record<string, number> = {};
+  let chars = 0;
+
+  for (const p of getAllPostsWithContent()) {
+    p.tags.forEach((t) => {
+      tagCount[t] = (tagCount[t] || 0) + 1;
+    });
+    const year = p.date.slice(0, 4);
+    yearCount[year] = (yearCount[year] || 0) + 1;
+
+    const text = p.content
+      .replace(/```[\s\S]*?```/g, " ")
+      .replace(/!?\[[^\]]*\]\([^)]*\)/g, " ");
+    chars += (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+    chars += (
+      text.replace(/[\u4e00-\u9fa5]/g, " ").match(/[A-Za-z0-9]+/g) || []
+    ).length;
+  }
+
+  const tags = Object.entries(tagCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+  const years = Object.entries(yearCount).sort((a, b) =>
+    a[0].localeCompare(b[0])
+  );
+
+  return {
+    total: allPosts.length,
+    tagCount: Object.keys(tagCount).length,
+    chars,
+    tags,
+    maxTag: tags[0]?.[1] ?? 1,
+    years,
+    maxYear: Math.max(...years.map(([, n]) => n), 1),
+  };
+});
+
+const heatmap = computed(() => {
+  const counts: Record<string, number> = {};
+  getAllPosts().forEach((p) => {
+    counts[p.date] = (counts[p.date] || 0) + 1;
+  });
+
+  const WEEKS = 26;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(today);
+  start.setDate(start.getDate() - (WEEKS * 7 - 1) - start.getDay());
+
+  const cells: { date: string; count: number; level: number }[] = [];
+  const d = new Date(start);
+  while (d <= today) {
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+      d.getDate()
+    ).padStart(2, "0")}`;
+    const count = counts[key] || 0;
+    cells.push({
+      date: key,
+      count,
+      level: count === 0 ? 0 : count === 1 ? 1 : count <= 2 ? 2 : count <= 4 ? 3 : 4,
+    });
+    d.setDate(d.getDate() + 1);
+  }
+  return cells;
+});
+
+const heatmapCols = computed(() => Math.ceil(heatmap.value.length / 7));
 
 function updateTime() {
   const start = new Date(START_DATE).getTime();
@@ -202,6 +276,67 @@ onUnmounted(() => {
           target="_blank"
           rel="noopener noreferrer"
         >github.com/Rainan249 →</a>
+      </div>
+    </section>
+
+    <!-- 写作统计 -->
+    <section class="about-section">
+      <h2 class="section-title">WRITING</h2>
+      <p class="section-sub">从本地笔记实时统计</p>
+
+      <div class="write-stats">
+        <div class="ws-item">
+          <span class="ws-num">{{ writeStats.total }}</span>
+          <span class="ws-label">篇文章</span>
+        </div>
+        <div class="ws-item">
+          <span class="ws-num">{{ writeStats.chars.toLocaleString() }}</span>
+          <span class="ws-label">累计字数</span>
+        </div>
+        <div class="ws-item">
+          <span class="ws-num">{{ writeStats.tagCount }}</span>
+          <span class="ws-label">个标签</span>
+        </div>
+      </div>
+
+      <div class="stat-block">
+        <p class="stat-block-title">标签分布 Top 8</p>
+        <div class="bar-list">
+          <div v-for="[tag, n] in writeStats.tags" :key="tag" class="bar-row">
+            <span class="bar-name">{{ tag }}</span>
+            <div class="bar-track">
+              <div class="bar-fill" :style="{ width: (n / writeStats.maxTag) * 100 + '%' }"></div>
+            </div>
+            <span class="bar-count">{{ n }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-block">
+        <p class="stat-block-title">年度文章数</p>
+        <div class="year-bars">
+          <div v-for="[year, n] in writeStats.years" :key="year" class="year-bar">
+            <span class="year-bar-count">{{ n }}</span>
+            <div class="year-bar-fill" :style="{ height: (n / writeStats.maxYear) * 100 + '%' }"></div>
+            <span class="year-bar-label">{{ year }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-block">
+        <p class="stat-block-title">近半年写作活跃度</p>
+        <div
+          class="heatmap"
+          :style="{ gridTemplateColumns: `repeat(${heatmapCols}, 12px)` }"
+        >
+          <span
+            v-for="c in heatmap"
+            :key="c.date"
+            class="heat-cell"
+            :class="'lvl-' + c.level"
+            :title="`${c.date}：${c.count} 篇`"
+          ></span>
+        </div>
       </div>
     </section>
 
@@ -508,8 +643,172 @@ onUnmounted(() => {
   text-decoration: none;
 }
 
-/* ===== 建站时间线 ===== */
+/* ===== 写作统计 ===== */
 
+.write-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.ws-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card-bg);
+}
+
+.ws-num {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.ws-label {
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+}
+
+.stat-block {
+  margin-bottom: 24px;
+}
+
+.stat-block-title {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* 横向条形 */
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.bar-name {
+  flex-shrink: 0;
+  width: 110px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.bar-track {
+  flex: 1;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.55), var(--accent));
+  transition: width 0.4s ease;
+}
+
+.bar-count {
+  flex-shrink: 0;
+  width: 22px;
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 纵向年份柱 */
+.year-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  height: 120px;
+  padding: 8px 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.year-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  min-width: 48px;
+  gap: 6px;
+}
+
+.year-bar-count {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.year-bar-fill {
+  width: 34px;
+  min-height: 4px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, var(--accent), rgba(var(--accent-rgb), 0.4));
+  transition: height 0.4s ease;
+}
+
+.year-bar-label {
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+}
+
+/* 热力图 */
+.heatmap {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 12px);
+  gap: 3px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.heat-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--border);
+  opacity: 0.5;
+}
+
+.heat-cell.lvl-1 {
+  background: rgba(var(--accent-rgb), 0.35);
+  opacity: 1;
+}
+
+.heat-cell.lvl-2 {
+  background: rgba(var(--accent-rgb), 0.55);
+  opacity: 1;
+}
+
+.heat-cell.lvl-3 {
+  background: rgba(var(--accent-rgb), 0.75);
+  opacity: 1;
+}
+
+.heat-cell.lvl-4 {
+  background: var(--accent);
+  opacity: 1;
+}
+
+/* ===== 建站时间线 ===== */
 .milestones {
   list-style: none;
   margin: 0;

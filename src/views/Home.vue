@@ -273,10 +273,57 @@ const homeQuote = ref({
   from: "《金缕衣》 · 唐 · 杜秋娘",
 });
 
+/* ===== 打字机 ===== */
+const TYPED_PHRASES = [
+  "Aim to be a top-tier pro.",
+  "立志成为一个糕手",
+  "Life is code. I will debug it.",
+  "Recording the bits and pieces of life.",
+];
+const typedText = ref(TYPED_PHRASES[0]);
+let typeTimer: ReturnType<typeof setTimeout> | null = null;
+
+function startTyping() {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) {
+    typedText.value = TYPED_PHRASES[0];
+    return;
+  }
+
+  let phraseIdx = 0;
+  let charIdx = TYPED_PHRASES[0].length;
+  let deleting = false;
+
+  function tick() {
+    const phrase = TYPED_PHRASES[phraseIdx];
+
+    if (!deleting) {
+      charIdx++;
+      typedText.value = phrase.slice(0, charIdx);
+      if (charIdx >= phrase.length) {
+        deleting = true;
+        typeTimer = setTimeout(tick, 1800);
+        return;
+      }
+    } else {
+      charIdx--;
+      typedText.value = phrase.slice(0, charIdx);
+      if (charIdx <= 0) {
+        deleting = false;
+        phraseIdx = (phraseIdx + 1) % TYPED_PHRASES.length;
+      }
+    }
+    typeTimer = setTimeout(tick, deleting ? 38 : 95);
+  }
+
+  typeTimer = setTimeout(tick, 2000);
+}
+
 onMounted(() => {
   document.title = "HOME · Rainan's ink";
   updateTime();
   timer = setInterval(updateTime, 1000);
+  startTyping();
   fetch("https://v1.hitokoto.cn/?c=i&c=d&c=k&max_length=30")
     .then((res) => (res.ok ? res.json() : null))
     .then((data) => {
@@ -314,6 +361,7 @@ onMounted(() => {
 });
 onUnmounted(() => {
   if (timer) clearInterval(timer);
+  if (typeTimer) clearTimeout(typeTimer);
   if (sectionScrollFrame !== null) {
     cancelAnimationFrame(sectionScrollFrame);
   }
@@ -356,7 +404,7 @@ onUnmounted(() => {
         </div>
         <div class="reveal-body">
           <h1 class="rw-title rw-dark">你好，我是 Rainan</h1>
-          <p class="rw-sub rw-dark">立志成为一个糕手</p>
+          <p class="rw-sub rw-dark"><span class="typed-text">{{ typedText }}</span><span class="typed-cursor"></span></p>
           <div class="rw-divider"><span class="rw-dot" /></div>
           <p class="rw-desc rw-dark">这里是我的个人博客，很高兴认识你!</p>
         </div>
@@ -364,7 +412,7 @@ onUnmounted(() => {
 
       <section ref="heroRef" class="hero">
         <h1 class="rw-title">HELLO, I'M Rainan</h1>
-        <p class="rw-sub">Aim to be a top-tier pro.</p>
+        <p class="rw-sub"><span class="typed-text">{{ typedText }}</span><span class="typed-cursor"></span></p>
         <div class="rw-divider"><span class="rw-dot" /></div>
         <p class="rw-desc">This is my blog，nice to meet you!</p>
       </section>
@@ -633,6 +681,7 @@ onUnmounted(() => {
   margin: 0;
   line-height: 1.5;
   letter-spacing: 0.03em;
+  min-height: 1.5em;
   text-shadow: var(--shadow-x, 0px) var(--shadow-y, 0px) 0 rgba(0, 47, 167,0.2);
   animation: fadeUp 0.7s 0.15s cubic-bezier(0.22,0.61,0.36,1) both;
 }
@@ -665,6 +714,30 @@ onUnmounted(() => {
   line-height: 1.75;
   text-shadow: var(--shadow-x, 0px) var(--shadow-y, 0px) 0 rgba(0, 47, 167,0.15);
   animation: fadeUp 0.7s 0.3s cubic-bezier(0.22,0.61,0.36,1) both;
+}
+
+.typed-text {
+  white-space: pre-wrap;
+}
+
+.typed-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 3px;
+  background: currentColor;
+  vertical-align: -0.1em;
+  animation: typed-blink 1s step-end infinite;
+}
+
+@keyframes typed-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 .scroll-hint {
