@@ -140,6 +140,35 @@ async function enhanceRepoCards() {
   );
 }
 
+function anchorKey(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^\p{L}\p{N}-]/gu, "");
+}
+
+function resolveAnchor(raw: string): HTMLElement | null {
+  let id = raw;
+  try {
+    id = decodeURIComponent(raw);
+  } catch {
+    id = raw;
+  }
+
+  const exact = document.getElementById(id);
+  if (exact) return exact;
+
+  const key = anchorKey(id);
+  const headings = contentRef.value?.querySelectorAll("h1, h2, h3, h4, h5, h6");
+  if (!headings) return null;
+
+  for (const h of Array.from(headings)) {
+    if (anchorKey(h.textContent ?? "") === key) return h as HTMLElement;
+  }
+  return null;
+}
+
 async function renderAndEnhance() {
   if (!post.value) {
     html.value = "";
@@ -150,6 +179,15 @@ async function renderAndEnhance() {
 
   document.querySelectorAll(".post-content pre code").forEach((el) => {
     hljs.highlightElement(el as HTMLElement);
+  });
+
+  contentRef.value?.querySelectorAll('a[href^="#"]').forEach((a) => {
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      const raw = a.getAttribute("href")?.slice(1) ?? "";
+      const target = resolveAnchor(raw);
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   });
 
   enhanceRepoCards();

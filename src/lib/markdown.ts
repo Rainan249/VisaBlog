@@ -146,6 +146,32 @@ function preprocessObsidianImages(content: string): string {
   );
 }
 
+function headingSlug(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .replace(/\s/g, "-");
+}
+
+function assignHeadingIds(html: string): string {
+  const used = new Map<string, number>();
+  return html.replace(
+    /<h([1-6])>([\s\S]*?)<\/h\1>/g,
+    (match, level: string, inner: string) => {
+      const text = inner.replace(/<[^>]+>/g, "");
+      const base = headingSlug(text);
+      if (!base) return match;
+
+      const count = used.get(base) ?? 0;
+      used.set(base, count + 1);
+      const id = count === 0 ? base : `${base}-${count}`;
+
+      return `<h${level} id="${id}">${inner}</h${level}>`;
+    }
+  );
+}
+
 function absolutizeImages(html: string): string {
   return html.replace(
     /<img\s+([^>]*?)src=(['"])((?!\/|http|data:)[^'"]+)\2/g,
@@ -156,6 +182,7 @@ function absolutizeImages(html: string): string {
 function addLinkTargets(html: string): string {
   return html.replace(/<a\s+([^>]*?)href=(['"])(.*?)\2([^>]*?)>/g, (match, before, _q, href, after) => {
     if (/target=/.test(match)) return match;
+    if (href.startsWith("#")) return match;
     const isExternal = /^https?:\/\//i.test(href);
     const cls = isExternal ? ' class="external-link"' : "";
     return `<a ${before}href="${href}"${after}${cls} target="_blank" rel="noopener noreferrer">`;
@@ -219,6 +246,7 @@ export async function renderMarkdown(content: string): Promise<string> {
 
   let html = (await marked.parse(processed, { async: true })) as string;
 
+  html = assignHeadingIds(html);
   html = absolutizeImages(html);
   html = wrapLinkPreviews(html);
   html = addLinkTargets(html);
