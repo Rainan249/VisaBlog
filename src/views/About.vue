@@ -165,21 +165,39 @@ function updateTime() {
 
 let timer: ReturnType<typeof setInterval> | null = null;
 
+const GH_USER = "Rainan249";
+const GH_ENDPOINTS = [
+  `https://api.github.com/users/${GH_USER}`,
+  `https://gh-proxy.com/https://api.github.com/users/${GH_USER}`,
+];
+
+const ghLoading = ref(true);
+
+async function loadGhStats() {
+  for (const url of GH_ENDPOINTS) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (typeof data.followers !== "number") continue;
+      ghStats.value = {
+        followers: data.followers,
+        repos: data.public_repos ?? null,
+      };
+      ghLoading.value = false;
+      return;
+    } catch {
+      /* try next endpoint */
+    }
+  }
+  ghLoading.value = false;
+}
+
 onMounted(() => {
   document.title = "ABOUT · Rainan's ink";
   updateTime();
   timer = setInterval(updateTime, 1000);
-
-  fetch("https://api.github.com/users/Rainan249")
-    .then((res) => (res.ok ? res.json() : null))
-    .then((data) => {
-      if (!data) return;
-      ghStats.value = {
-        followers: data.followers ?? null,
-        repos: data.public_repos ?? null,
-      };
-    })
-    .catch(() => {});
+  loadGhStats();
 });
 
 onUnmounted(() => {
@@ -212,7 +230,7 @@ onUnmounted(() => {
       </ul>
 
       <p class="motto">Motto: 立志成为一个糕手</p>
-      <p class="spoiler" title="鼠标悬停揭晓，点击有惊喜" @click="onSpoilerClick">小声bb：我的小博客都是ai出来的</p>
+      <p class="spoiler" title="鼠标悬停揭晓，点击有惊喜" @click="onSpoilerClick">小声bb：我的小站是ai出来的</p>
 
       <div class="divider" />
 
@@ -268,11 +286,11 @@ onUnmounted(() => {
       <p class="section-sub">实时数据，来自 GitHub API</p>
       <div class="gh-card">
         <div class="gh-item">
-          <span class="gh-num">{{ ghStats.followers ?? "—" }}</span>
+          <span class="gh-num">{{ ghLoading ? "…" : ghStats.followers ?? "—" }}</span>
           <span class="gh-label">Followers</span>
         </div>
         <div class="gh-item">
-          <span class="gh-num">{{ ghStats.repos ?? "—" }}</span>
+          <span class="gh-num">{{ ghLoading ? "…" : ghStats.repos ?? "—" }}</span>
           <span class="gh-label">Public Repos</span>
         </div>
         <a

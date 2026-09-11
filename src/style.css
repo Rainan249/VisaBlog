@@ -350,20 +350,23 @@ img {
   font-variant-numeric: tabular-nums;
 }
 
-/* ========== 文章内外链标识 ========== */
+/* ========== 文章内链接图标 ========== */
 
-.post-content a.external-link::after,
-.about a.external-link::after {
+.post-content a:not(.link-preview)::after {
   content: "";
   display: inline-block;
-  width: 0.7em;
-  height: 0.7em;
-  margin-left: 0.2em;
+  width: 0.72em;
+  height: 0.72em;
+  margin-left: 0.22em;
   background-color: currentColor;
-  opacity: 0.55;
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 17L17 7'/%3E%3Cpath d='M8 7h9v9'/%3E%3C/svg%3E") center / contain no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 17L17 7'/%3E%3Cpath d='M8 7h9v9'/%3E%3C/svg%3E") center / contain no-repeat;
-  vertical-align: -0.05em;
+  opacity: 0.6;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%3E%3Cpath%20fill%3D'black'%20d%3D'M16.243%209.878a1%201%200%200%201%201.32-.083l.094.083L19.778%2012a5.5%205.5%200%200%201-7.596%207.952L12%2019.778l-2.121-2.121a1%201%200%200%201%201.32-1.498l.094.083l2.121%202.122a3.5%203.5%200%200%200%205.091-4.8l-.141-.15l-2.121-2.121a1%201%200%200%201%200-1.415M9.17%209.171a1%201%200%200%201%201.32-.083l.095.083l4.242%204.243a1%201%200%200%201-1.32%201.497l-.094-.083l-4.243-4.242a1%201%200%200%201%200-1.415m-4.95-4.95a5.5%205.5%200%200%201%207.597-.173l.182.174l2.121%202.12A1%201%200%200%201%2012.8%207.84l-.094-.083l-2.121-2.121a3.5%203.5%200%200%200-5.091%204.8l.141.15l2.121%202.12a1%201%200%200%201-1.32%201.498l-.094-.083L4.222%2012a5.5%205.5%200%200%201%200-7.778Z'%2F%3E%3C%2Fsvg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%3E%3Cpath%20fill%3D'black'%20d%3D'M16.243%209.878a1%201%200%200%201%201.32-.083l.094.083L19.778%2012a5.5%205.5%200%200%201-7.596%207.952L12%2019.778l-2.121-2.121a1%201%200%200%201%201.32-1.498l.094.083l2.121%202.122a3.5%203.5%200%200%200%205.091-4.8l-.141-.15l-2.121-2.121a1%201%200%200%201%200-1.415M9.17%209.171a1%201%200%200%201%201.32-.083l.095.083l4.242%204.243a1%201%200%200%201-1.32%201.497l-.094-.083l-4.243-4.242a1%201%200%200%201%200-1.415m-4.95-4.95a5.5%205.5%200%200%201%207.597-.173l.182.174l2.121%202.12A1%201%200%200%201%2012.8%207.84l-.094-.083l-2.121-2.121a3.5%203.5%200%200%200-5.091%204.8l.141.15l2.121%202.12a1%201%200%200%201-1.32%201.498l-.094-.083L4.222%2012a5.5%205.5%200%200%201%200-7.778Z'%2F%3E%3C%2Fsvg%3E") center / contain no-repeat;
+  vertical-align: -0.02em;
+}
+
+.post-content a:not(.link-preview):hover::after {
+  opacity: 1;
 }
 
 /* ========== Browser surface polish ========== */
