@@ -1,5 +1,16 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { getAllPosts } from "../lib/posts";
+
+const router = useRouter();
+
+function randomPost() {
+  const all = getAllPosts();
+  if (all.length === 0) return;
+  const pick = all[Math.floor(Math.random() * all.length)];
+  router.push(`/blog/${pick.slug}`);
+}
 
 onMounted(() => {
   document.title = "404 · Rainan's ink";
@@ -14,6 +25,7 @@ onMounted(() => {
     <div class="actions">
       <RouterLink to="/" class="action-btn primary">返回首页</RouterLink>
       <RouterLink to="/blog" class="action-btn">浏览文章</RouterLink>
+      <button class="action-btn" @click="randomPost">随机一篇</button>
     </div>
   </div>
 </template>

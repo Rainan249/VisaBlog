@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
-import { useRoute } from "vue-router";
-import { getPostBySlug } from "../lib/posts";
+import { useRoute, useRouter } from "vue-router";
+import { getPostBySlug, getAllPosts } from "../lib/posts";
+import type { PostMeta } from "../lib/posts";
 import { renderMarkdown } from "../lib/markdown";
 import { ElProgress } from "element-plus";
 import hljs from "highlight.js";
@@ -10,6 +11,31 @@ import "highlight.js/styles/github-dark-dimmed.min.css";
 import { useTheme } from "../lib/useTheme";
 
 const route = useRoute();
+const router = useRouter();
+
+const allPosts = getAllPosts() as PostMeta[];
+
+const relatedPosts = computed(() => {
+  const p = post.value;
+  if (!p) return [] as PostMeta[];
+  return allPosts
+    .filter((x) => x.slug !== p.slug)
+    .map((x) => ({ meta: x, score: x.tags.filter((t) => p.tags.includes(t)).length }))
+    .filter((x) => x.score > 0)
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        new Date(b.meta.date).getTime() - new Date(a.meta.date).getTime()
+    )
+    .slice(0, 3)
+    .map((x) => x.meta);
+});
+
+function randomPost() {
+  if (allPosts.length === 0) return;
+  const pick = allPosts[Math.floor(Math.random() * allPosts.length)];
+  router.push(`/blog/${pick.slug}`);
+}
 const { isDark } = useTheme();
 
 const post = ref(getPostBySlug(route.params.slug as string));
@@ -136,6 +162,8 @@ async function renderAndEnhance() {
 }
 
 async function loadPost(slug: string) {
+  window.scrollTo(0, 0);
+  readProgress.value = 0;
   post.value = getPostBySlug(slug);
   observer?.disconnect();
 
@@ -628,6 +656,21 @@ watch(activeId, (id) => {
       <div v-else ref="contentRef" class="post-content" v-html="html"></div>
 
       <div class="post-footer">
+        <div v-if="relatedPosts.length" class="related-block">
+          <h3 class="related-title">相关文章</h3>
+          <div class="related-list">
+            <RouterLink
+              v-for="r in relatedPosts"
+              :key="r.slug"
+              :to="`/blog/${r.slug}`"
+              class="related-card"
+            >
+              <span class="related-name">{{ r.title }}</span>
+              <span class="related-date">{{ r.date }}</span>
+            </RouterLink>
+          </div>
+        </div>
+
         <div class="post-copyright">
           <p><strong>本文作者</strong>Rainan</p>
           <p><strong>本文链接</strong><a :href="currentUrl">{{ currentUrl }}</a></p>
@@ -637,18 +680,30 @@ watch(activeId, (id) => {
       </div>
     </article>
 
-    <!-- 返回顶部 -->
-    <button
-      class="back-to-top"
-      v-show="showTop"
-      @click="scrollToTop"
-      aria-label="返回顶部"
-      title="返回顶部"
-    >
-      <svg width="18" height="18" viewBox="0 0 18 18">
-        <path d="M4 11L9 6l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
-    </button>
+    <!-- 右下角悬浮按钮组 -->
+    <div class="fab-stack">
+      <button
+        class="fab-btn"
+        v-show="showTop"
+        @click="scrollToTop"
+        aria-label="返回顶部"
+        title="返回顶部"
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18">
+          <path d="M4 11L9 6l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+      <button
+        class="fab-btn"
+        @click="randomPost"
+        aria-label="随便看看"
+        title="随便看看"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 3h5v5" /><path d="M4 20L21 3" /><path d="M21 16v5h-5" /><path d="M15 15l6 6" /><path d="M4 4l5 5" />
+        </svg>
+      </button>
+    </div>
 
     <!-- Mobile floating TOC button -->
     <button
@@ -1083,6 +1138,93 @@ watch(activeId, (id) => {
   margin-top: 48px;
 }
 
+/* ===== 相关文章 ===== */
+
+.related-block {
+  margin-bottom: 28px;
+}
+
+.related-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: var(--text);
+}
+
+.related-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.related-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card-bg);
+  text-decoration: none;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.related-card:hover {
+  border-color: rgba(var(--accent-rgb), 0.4);
+  transform: translateX(3px);
+  text-decoration: none;
+}
+
+.related-name {
+  font-size: 0.92rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.related-date {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== 右下角悬浮按钮组 ===== */
+
+.fab-stack {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 997;
+}
+
+.fab-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  transition: color 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.fab-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
 .post-copyright {
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -1110,35 +1252,6 @@ watch(activeId, (id) => {
 
 .post-comments {
   margin-top: 32px;
-}
-
-/* ========================================
-   Back to top
-   ======================================== */
-
-.back-to-top {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--card-bg);
-  color: var(--text-secondary);
-  cursor: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  z-index: 997;
-  transition: color 0.2s, border-color 0.2s, transform 0.2s;
-}
-
-.back-to-top:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-  transform: translateY(-2px);
 }
 
 /* ========================================
@@ -1578,7 +1691,7 @@ watch(activeId, (id) => {
     display: flex;
   }
 
-  .back-to-top {
+  .fab-stack {
     bottom: 84px;
   }
 }

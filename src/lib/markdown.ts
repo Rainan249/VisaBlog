@@ -162,6 +162,28 @@ function addLinkTargets(html: string): string {
   });
 }
 
+function wrapLinkPreviews(html: string): string {
+  return html.replace(
+    /<p>\s*<a\s+href=(['"])(https?:\/\/[^'"]+)\1\s*>([\s\S]*?)<\/a>\s*<\/p>/g,
+    (_match, _q, href: string, text: string) => {
+      if (/<img/i.test(text)) return _match;
+
+      let host = href;
+      try {
+        host = new URL(href).hostname.replace(/^www\./, "");
+      } catch {
+        host = href;
+      }
+      const plain = text.replace(/<[^>]+>/g, "").trim() || host;
+      const favicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(
+        host
+      )}&sz=64`;
+
+      return `<a class="link-preview" href="${href}" target="_blank" rel="noopener noreferrer"><img class="link-preview-icon" src="${favicon}" alt="" loading="lazy" onerror="this.style.display='none'"/><span class="link-preview-body"><span class="link-preview-title">${plain}</span><span class="link-preview-host">${host}</span></span></a>`;
+    }
+  );
+}
+
 function wrapCodeBlocks(html: string): string {
   return html.replace(
     /<pre><code class="language-(\w+)">([\s\S]*?)<\/code><\/pre>/g,
@@ -198,6 +220,7 @@ export async function renderMarkdown(content: string): Promise<string> {
   let html = (await marked.parse(processed, { async: true })) as string;
 
   html = absolutizeImages(html);
+  html = wrapLinkPreviews(html);
   html = addLinkTargets(html);
   html = wrapCodeBlocks(html);
 

@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import CursorTrail from "../components/CursorTrail.vue";
 import avatar from "../assets/头像.jpg";
 import { getAllPosts, getAllPostsWithContent } from "../lib/posts";
+import { burstConfetti } from "../lib/confetti";
 import {
   siSpringboot,
   siVuedotjs,
@@ -24,6 +25,10 @@ const ghStats = ref<{ followers: number | null; repos: number | null }>({
   followers: null,
   repos: null,
 });
+
+function onSpoilerClick(e: MouseEvent) {
+  burstConfetti(e.clientX, e.clientY);
+}
 
 interface ToolItem {
   icon: SimpleIcon;
@@ -207,7 +212,7 @@ onUnmounted(() => {
       </ul>
 
       <p class="motto">Motto: 立志成为一个糕手</p>
-      <p class="spoiler" title="鼠标悬停揭晓">小声bb：我的小博客都是ai出来的</p>
+      <p class="spoiler" title="鼠标悬停揭晓，点击有惊喜" @click="onSpoilerClick">小声bb：我的小博客都是ai出来的</p>
 
       <div class="divider" />
 

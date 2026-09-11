@@ -18,6 +18,9 @@ const router = createRouter({
     { path: "/about", name: "about", component: About },
     { path: "/:pathMatch(.*)*", name: "not-found", component: NotFound },
   ],
+  scrollBehavior() {
+    return { top: 0 };
+  },
 });
 
 export default router;
