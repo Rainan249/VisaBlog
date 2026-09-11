@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import vue from "@vitejs/plugin-vue";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs";
@@ -165,22 +165,54 @@ function scanGalleryData(): { name: string; subcategories: { name: string; image
   return result;
 }
 
-export default defineConfig({
-  plugins: [
-    vue(),
-    {
-      name: "virtual-gallery-data",
-      resolveId(id) {
-        if (id === "virtual:gallery-data") return "\0" + id;
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  const qqMusicKey = env.QQMUSIC_API_KEY || process.env.QQMUSIC_API_KEY || "";
+
+  return {
+    plugins: [
+      vue(),
+      {
+        name: "virtual-gallery-data",
+        resolveId(id) {
+          if (id === "virtual:gallery-data") return "\0" + id;
+        },
+        load(id) {
+          if (id === "\0virtual:gallery-data") {
+            return `export default ${JSON.stringify(scanGalleryData())}`;
+          }
+        },
       },
-      load(id) {
-        if (id === "\0virtual:gallery-data") {
-          return `export default ${JSON.stringify(scanGalleryData())}`;
-        }
+      {
+        name: "qq-music-data",
+        resolveId(id: string) {
+          if (id === "virtual:qq-music") return "\0virtual:qq-music";
+        },
+        async load(id: string) {
+          if (id !== "\0virtual:qq-music") return;
+          if (!qqMusicKey) return "export default null";
+          try {
+            const res = await fetch("https://a.y.qq.com/me/report", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${qqMusicKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                params: { timeKey: "m" },
+                comm: { skill_version: "0.0.3" },
+              }),
+            });
+            if (!res.ok) return "export default null";
+            const data = await res.json();
+            return `export default ${JSON.stringify(data)}`;
+          } catch {
+            return "export default null";
+          }
+        },
       },
-    },
-    {
-      name: "md-create-times",
+      {
+        name: "md-create-times",
       resolveId(id) {
         if (id === "virtual:md-create-times") return "\0" + id;
       },
@@ -259,4 +291,5 @@ export default defineConfig({
   define: {
     global: "globalThis",
   },
+  };
 });

@@ -4,6 +4,7 @@ import CursorTrail from "../components/CursorTrail.vue";
 import avatar from "../assets/头像.jpg";
 import { getAllPosts, getAllPostsWithContent } from "../lib/posts";
 import { burstConfetti } from "../lib/confetti";
+import qqMusic from "virtual:qq-music";
 import {
   siSpringboot,
   siVuedotjs,
@@ -154,6 +155,87 @@ const heatmap = computed(() => {
 
 const heatmapCols = computed(() => Math.ceil(heatmap.value.length / 7));
 
+/* ===== QQ 音乐听歌数据 ===== */
+
+const music = computed(() => {
+  const m = qqMusic?.monthData;
+  if (!m) return null;
+
+  const songs = (m.topSong ?? []).slice(0, 3).map((s) => ({
+    name: s.songName,
+    sub: s.singerName,
+    href: `https://i2.y.qq.com/a/song/${s.songMid}`,
+  }));
+
+  const singers = (m.topSinger ?? []).slice(0, 3).map((s) => ({
+    name: s.singerName,
+    href: `https://i2.y.qq.com/a/singer/${s.singerMid}`,
+  }));
+
+  const genres = (m.topGenre?.genre2Count ?? [])
+    .slice()
+    .sort((a, b) => b.sum - a.sum)
+    .slice(0, 3)
+    .map((g) => g.name);
+
+  const songHref = (mid?: string) =>
+    mid ? `https://i2.y.qq.com/a/song/${mid}` : undefined;
+
+  const tops = m.topDataList ?? [];
+  const withRepeat = tops.filter((t) => t.repeatSong?.songName);
+  const repeatEntry = (withRepeat.length ? withRepeat : tops)
+    .slice()
+    .sort((a, b) => (b.month ?? "").localeCompare(a.month ?? ""))[0];
+
+  const bests: { label: string; value: string; sub?: string; href?: string }[] = [];
+  if (repeatEntry?.repeatSong?.songName) {
+    bests.push({
+      label: "单曲循环之最",
+      value: repeatEntry.repeatSong.songName,
+      sub: `循环 ${repeatEntry.repeatSong.count ?? "?"} 次`,
+      href: songHref(repeatEntry.repeatSong.songMid),
+    });
+  }
+  if (repeatEntry?.midnightSong?.songName) {
+    bests.push({
+      label: "深夜单曲",
+      value: repeatEntry.midnightSong.songName,
+      sub: `${repeatEntry.midnightSong.hour ?? 0} 点`,
+      href: songHref(repeatEntry.midnightSong.songMid),
+    });
+  }
+  if (repeatEntry?.favSongName) {
+    bests.push({
+      label: "月度最爱",
+      value: repeatEntry.favSongName,
+      sub: repeatEntry.favSingerName,
+      href: songHref(repeatEntry.favSongMid),
+    });
+  }
+  if (m.consDays?.topListen) {
+    bests.push({
+      label: "单日最多听歌",
+      value: `${m.consDays.topListen} 首`,
+      sub: m.consDays.singerDay?.singerName
+        ? `连续最多 · ${m.consDays.singerDay.singerName}`
+        : undefined,
+    });
+  }
+
+  const months = m.monthDetailList ?? [];
+  const totalListens = months.reduce((n, d) => n + (d.listenCount ?? 0), 0);
+
+  return {
+    songs,
+    singers,
+    genres,
+    bests,
+    totalListens,
+    hour: m.preferHour?.preferHour,
+    days: m.consDays?.conDays,
+  };
+});
+
 function updateTime() {
   const start = new Date(START_DATE).getTime();
   const diff = Date.now() - start;
@@ -302,6 +384,58 @@ onUnmounted(() => {
           target="_blank"
           rel="noopener noreferrer"
         >github.com/Rainan249 →</a>
+      </div>
+    </section>
+
+    <!-- QQ 音乐听歌数据 -->
+    <section v-if="music" class="about-section">
+      <h2 class="section-title">MUSIC</h2>
+      <p class="section-sub">本月 QQ 音乐听歌报告</p>
+
+      <div v-if="music.bests.length" class="music-bests">
+        <div v-for="b in music.bests" :key="b.label" class="best-card">
+          <span class="best-label">{{ b.label }}</span>
+          <a
+            v-if="b.href"
+            :href="b.href"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="best-value best-value--link"
+          >{{ b.value }}</a>
+          <span v-else class="best-value">{{ b.value }}</span>
+          <span v-if="b.sub" class="best-sub">{{ b.sub }}</span>
+        </div>
+      </div>
+
+      <div class="music-grid">
+        <div class="music-col">
+          <p class="music-col-title">常听歌曲</p>
+          <ul class="music-list">
+            <li v-for="(s, i) in music.songs" :key="s.name">
+              <span class="music-rank">{{ i + 1 }}</span>
+              <a :href="s.href" target="_blank" rel="noopener noreferrer" class="music-name">{{ s.name }}</a>
+              <span class="music-sub">{{ s.sub }}</span>
+            </li>
+          </ul>
+        </div>
+        <div class="music-col">
+          <p class="music-col-title">常听歌手</p>
+          <ul class="music-list">
+            <li v-for="(s, i) in music.singers" :key="s.name">
+              <span class="music-rank">{{ i + 1 }}</span>
+              <a :href="s.href" target="_blank" rel="noopener noreferrer" class="music-name">{{ s.name }}</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="music-chips">
+        <span v-if="music.totalListens" class="music-chip">
+          累计听歌 · {{ music.totalListens }} 次
+        </span>
+        <span v-if="music.genres.length" class="music-chip">偏爱流派 · {{ music.genres.join(" / ") }}</span>
+        <span v-if="music.hour !== undefined" class="music-chip">最爱时段 · {{ music.hour }} 点</span>
+        <span v-if="music.days" class="music-chip">连续听歌 · {{ music.days }} 天</span>
       </div>
     </section>
 
@@ -669,6 +803,147 @@ onUnmounted(() => {
 .gh-link:hover {
   color: var(--accent);
   text-decoration: none;
+}
+
+/* ===== QQ 音乐 ===== */
+
+.music-bests {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.best-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  min-width: 0;
+}
+
+.best-label {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+}
+
+.best-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.best-value--link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.best-value--link:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.best-sub {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.music-col-title {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.music-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.music-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  min-width: 0;
+}
+
+.music-rank {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.music-name {
+  font-size: 0.92rem;
+  color: var(--text);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music-name:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.music-sub {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+}
+
+.music-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.music-chip {
+  font-size: 0.78rem;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+@media (max-width: 500px) {
+  .music-bests {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .music-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ===== 写作统计 ===== */
