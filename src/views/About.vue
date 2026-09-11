@@ -66,16 +66,19 @@ const milestones = [
 ];
 
 const poweredBy = [
-  "Vue 3",
-  "Vite",
-  "Obsidian",
-  "Vercel",
-  "Waline",
-  "marked",
-  "highlight.js",
-  "Fuse.js",
-  "KaTeX",
-  "medium-zoom",
+  { name: "Vue 3", href: "https://vuejs.org/" },
+  { name: "Vite", href: "https://vite.dev/" },
+  { name: "Obsidian", href: "https://obsidian.md/" },
+  { name: "Vercel", href: "https://vercel.com/" },
+  { name: "Waline", href: "https://waline.js.org/" },
+  { name: "marked", href: "https://marked.js.org/" },
+  { name: "highlight.js", href: "https://highlightjs.org/" },
+  { name: "Fuse.js", href: "https://fusejs.io/" },
+  { name: "KaTeX", href: "https://katex.org/" },
+  {
+    name: "medium-zoom",
+    href: "https://github.com/francoischalifour/medium-zoom",
+  },
 ];
 
 /* ===== 写作统计 ===== */
@@ -380,7 +383,9 @@ onUnmounted(() => {
       <h2 class="section-title">POWERED BY</h2>
       <p class="section-sub">本站由这些优秀的开源项目与平台驱动</p>
       <ul class="powered-grid">
-        <li v-for="p in poweredBy" :key="p" class="powered-item">{{ p }}</li>
+        <li v-for="p in poweredBy" :key="p.name">
+          <a :href="p.href" target="_blank" rel="noopener noreferrer" class="powered-link">{{ p.name }}</a>
+        </li>
       </ul>
     </section>
 
@@ -884,13 +889,64 @@ onUnmounted(() => {
   gap: 8px;
 }
 
-.powered-item {
-  padding: 8px 14px;
+.powered-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
+  border-radius: 10px;
+  background: var(--card-bg);
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: rgba(var(--accent-rgb), 0.4);
+  text-underline-offset: 0.22em;
+  text-decoration-thickness: 1px;
   text-align: center;
+  overflow: hidden;
+  transition: color 0.2s, border-color 0.2s, background 0.2s,
+    transform 0.2s, box-shadow 0.2s, text-decoration-color 0.2s;
+}
+
+.powered-link::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.powered-link::after {
+  content: "↗";
+  font-size: 0.82em;
+  opacity: 0.4;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.powered-link:hover {
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), 0.4);
+  background: rgba(var(--accent-rgb), 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(var(--accent-rgb), 0.12);
+  text-decoration-color: var(--accent);
+}
+
+.powered-link:hover::before {
+  opacity: 1;
+}
+
+.powered-link:hover::after {
+  opacity: 0.9;
+  transform: translate(2px, -2px);
 }
 
 /* ===== 运行时间 ===== */
