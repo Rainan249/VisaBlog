@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
+import { buildPostSlug } from "./src/lib/slug.ts";
 
 const IMG_DIR = "03 - resources/小小储物袋/Picture";
 const SITE_URL = (process.env.VITE_SITE_URL || "").replace(/\/$/, "");
@@ -19,7 +20,7 @@ function collectPosts(): { slug: string; title: string; date: string; excerpt: s
         if (entry.name === ".obsidian") continue;
         walk(full);
       } else if (entry.name.endsWith(".md")) {
-        const slug = path.relative(postsDir, full).replace(/\.md$/, "").replace(/\\/g, "/");
+        const slug = buildPostSlug(path.relative(postsDir, full).replace(/\\/g, "/"));
         const { data, content } = matter(fs.readFileSync(full, "utf-8"));
         const excerpt = content
           .replace(/```[\s\S]*?```/g, " ")

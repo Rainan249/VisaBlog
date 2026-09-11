@@ -1,5 +1,6 @@
 import matter from "gray-matter";
 import createTimes from "virtual:md-create-times";
+import { buildPostSlug } from "./slug";
 
 export interface PostMeta {
   slug: string;
@@ -21,14 +22,26 @@ const modules = import.meta.glob("/posts/**/*.md", {
 
 function getAllPostsRaw(): Post[] {
   const posts: Post[] = [];
+  const usedSlugs = new Map<string, number>();
 
   for (const filepath of Object.keys(modules)) {
     // 跳过 .obsidian 目录
     if (filepath.includes("/.obsidian/")) continue;
 
-    // slug = 相对于 posts/ 的路径，去掉 .md 后缀，用 / 保留层级
-    let slug = filepath.replace(/^\/posts\//, "").replace(/\.md$/, "");
-    // Obsidian 文件名可能有编号前缀如 "001-030.xxx"，保留原样
+    // 原始相对路径（用于查找文件创建时间）
+    const rel = filepath.replace(/^\/posts\//, "").replace(/\.md$/, "");
+    // 友好 URL：第二层目录 / 去编号文章名
+    let slug = buildPostSlug(rel);
+
+    // 处理重名：追加 -2、-3…
+    const seen = usedSlugs.get(slug);
+    if (seen) {
+      usedSlugs.set(slug, seen + 1);
+      slug = `${slug}-${seen + 1}`;
+    } else {
+      usedSlugs.set(slug, 1);
+    }
+
     const raw = modules[filepath] as string;
     const { data, content } = matter(raw);
 
@@ -39,7 +52,7 @@ function getAllPostsRaw(): Post[] {
         ? data.date instanceof Date
           ? data.date.toISOString().split("T")[0]
           : String(data.date)
-        : createTimes[slug] || new Date().toISOString().split("T")[0],
+        : createTimes[rel] || new Date().toISOString().split("T")[0],
       tags: data.tags || [],
       content,
     });
