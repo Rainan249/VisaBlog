@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { buildPostSlug } from "./src/lib/slug.ts";
+import { loadQqMusicReport } from "./api/_qqmusic.ts";
 
 const IMG_DIR = "03 - resources/小小储物袋/Picture";
 const SITE_URL = (process.env.VITE_SITE_URL || "").replace(/\/$/, "");
@@ -169,59 +170,6 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const qqMusicKey = env.QQMUSIC_API_KEY || process.env.QQMUSIC_API_KEY || "";
 
-  async function fetchCover(songMid: string): Promise<string | null> {
-    try {
-      const payload = encodeURIComponent(
-        JSON.stringify({
-          comm: { ct: 24 },
-          req: {
-            module: "music.pf_song_detail_svr",
-            method: "get_song_detail_yqq",
-            param: { song_mid: songMid },
-          },
-        })
-      );
-      const res = await fetch(
-        `https://u.y.qq.com/cgi-bin/musicu.fcg?format=json&data=${payload}`
-      );
-      if (!res.ok) return null;
-      const json: any = await res.json();
-      const albumMid = json?.req?.data?.track_info?.album?.mid;
-      return albumMid
-        ? `https://y.gtimg.cn/music/photo_new/T002R300x300M000${albumMid}.jpg`
-        : null;
-    } catch {
-      return null;
-    }
-  }
-
-  async function enrichCovers(data: any) {
-    const m = data?.monthData;
-    if (!m) return;
-
-    const targets: { mid: string; apply: (url: string) => void }[] = [];
-    for (const s of m.topSong ?? []) {
-      if (s?.songMid) targets.push({ mid: s.songMid, apply: (u) => (s.cover = u) });
-    }
-    for (const t of m.topDataList ?? []) {
-      if (t?.repeatSong?.songMid)
-        targets.push({ mid: t.repeatSong.songMid, apply: (u) => (t.repeatSong.cover = u) });
-      if (t?.midnightSong?.songMid)
-        targets.push({ mid: t.midnightSong.songMid, apply: (u) => (t.midnightSong.cover = u) });
-      if (t?.favSongMid) targets.push({ mid: t.favSongMid, apply: (u) => (t.favSongCover = u) });
-    }
-
-    const cache = new Map<string, string | null>();
-    for (const t of targets) {
-      let url = cache.get(t.mid);
-      if (url === undefined) {
-        url = await fetchCover(t.mid);
-        cache.set(t.mid, url);
-      }
-      if (url) t.apply(url);
-    }
-  }
-
   return {
     plugins: [
       vue(),
@@ -237,32 +185,18 @@ export default defineConfig(({ mode }) => {
         },
       },
       {
-        name: "qq-music-data",
-        resolveId(id: string) {
-          if (id === "virtual:qq-music") return "\0virtual:qq-music";
-        },
-        async load(id: string) {
-          if (id !== "\0virtual:qq-music") return;
-          if (!qqMusicKey) return "export default null";
-          try {
-            const res = await fetch("https://a.y.qq.com/me/report", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${qqMusicKey}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                params: { timeKey: "m" },
-                comm: { skill_version: "0.0.3" },
-              }),
-            });
-            if (!res.ok) return "export default null";
-            const data = await res.json();
-            await enrichCovers(data);
-            return `export default ${JSON.stringify(data)}`;
-          } catch {
-            return "export default null";
-          }
+        name: "qq-music-dev-api",
+        configureServer(server) {
+          server.middlewares.use("/api/qq-music", async (_req, res) => {
+            const data = await loadQqMusicReport(qqMusicKey);
+            if (!data) {
+              res.statusCode = 204;
+              res.end();
+              return;
+            }
+            res.setHeader("Content-Type", "application/json; charset=utf-8");
+            res.end(JSON.stringify(data));
+          });
         },
       },
       {

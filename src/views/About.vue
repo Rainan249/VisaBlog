@@ -4,7 +4,6 @@ import CursorTrail from "../components/CursorTrail.vue";
 import avatar from "../assets/头像.jpg";
 import { getAllPosts, getAllPostsWithContent } from "../lib/posts";
 import { burstConfetti } from "../lib/confetti";
-import qqMusic from "virtual:qq-music";
 import {
   siSpringboot,
   siVuedotjs,
@@ -157,8 +156,51 @@ const heatmapCols = computed(() => Math.ceil(heatmap.value.length / 7));
 
 /* ===== QQ 音乐听歌数据 ===== */
 
+interface QqSong {
+  songName: string;
+  singerName: string;
+  songMid: string;
+  cover?: string;
+}
+
+interface QqMonthTop {
+  month?: string;
+  favSongMid?: string;
+  favSongName?: string;
+  favSingerName?: string;
+  favSongCover?: string;
+  repeatSong?: { songName?: string; songMid?: string; count?: number; cover?: string };
+  midnightSong?: { songName?: string; songMid?: string; hour?: number; cover?: string };
+}
+
+interface QqReport {
+  monthData?: {
+    topSong?: QqSong[];
+    topSinger?: { singerName: string; singerMid: string }[];
+    topDataList?: QqMonthTop[];
+    topGenre?: { genre2Count?: { name: string; sum: number }[] };
+    preferHour?: { preferHour?: number };
+    consDays?: { conDays?: number; topListen?: number; singerDay?: { singerName?: string } };
+    monthDetailList?: { dataTime?: string; listenCount?: number }[];
+  };
+}
+
+const qqData = ref<QqReport | null>(null);
+const musicLoading = ref(false);
+
+async function loadMusic() {
+  musicLoading.value = true;
+  try {
+    const res = await fetch("/api/qq-music");
+    if (res.ok) qqData.value = (await res.json()) as QqReport;
+  } catch {
+    /* ignore */
+  }
+  musicLoading.value = false;
+}
+
 const music = computed(() => {
-  const m = qqMusic?.monthData;
+  const m = qqData.value?.monthData;
   if (!m) return null;
 
   const songs = (m.topSong ?? []).slice(0, 3).map((s) => ({
@@ -290,6 +332,7 @@ onMounted(() => {
   updateTime();
   timer = setInterval(updateTime, 1000);
   loadGhStats();
+  loadMusic();
 });
 
 onUnmounted(() => {
