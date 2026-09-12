@@ -5,7 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { buildPostSlug } from "./src/lib/slug.ts";
-import { loadQqMusicReport } from "./api/_qqmusic.ts";
+import { loadQqMusicReport } from "./api/qq-music.ts";
 
 const IMG_DIR = "03 - resources/小小储物袋/Picture";
 const SITE_URL = (process.env.VITE_SITE_URL || "").replace(/\/$/, "");
