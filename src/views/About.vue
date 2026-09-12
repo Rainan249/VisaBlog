@@ -190,11 +190,19 @@ const musicLoading = ref(false);
 
 async function loadMusic() {
   musicLoading.value = true;
-  try {
-    const res = await fetch("/api/qq-music");
-    if (res.ok) qqData.value = (await res.json()) as QqReport;
-  } catch {
-    /* ignore */
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch("/api/qq-music");
+      const type = res.headers.get("content-type") || "";
+      if (res.ok && type.includes("application/json")) {
+        qqData.value = (await res.json()) as QqReport;
+        musicLoading.value = false;
+        return;
+      }
+    } catch {
+      /* retry */
+    }
+    await new Promise((r) => setTimeout(r, 600));
   }
   musicLoading.value = false;
 }

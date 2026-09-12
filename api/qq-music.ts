@@ -1,5 +1,7 @@
 /// <reference types="node" />
 
+const coverCache = new Map<string, string | null>();
+
 async function fetchCover(songMid: string): Promise<string | null> {
   try {
     const payload = encodeURIComponent(
@@ -13,7 +15,15 @@ async function fetchCover(songMid: string): Promise<string | null> {
       })
     );
     const res = await fetch(
-      `https://u.y.qq.com/cgi-bin/musicu.fcg?format=json&data=${payload}`
+      `https://u.y.qq.com/cgi-bin/musicu.fcg?format=json&data=${payload}`,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36",
+          Referer: "https://y.qq.com/",
+        },
+        signal: AbortSignal.timeout(4000),
+      }
     );
     if (!res.ok) return null;
     const json: any = await res.json();
@@ -30,57 +40,74 @@ async function enrichCovers(data: any): Promise<void> {
   const m = data?.monthData;
   if (!m) return;
 
-  const targets: { mid: string; apply: (url: string) => void }[] = [];
-  for (const s of m.topSong ?? []) {
-    if (s?.songMid) targets.push({ mid: s.songMid, apply: (u) => (s.cover = u) });
-  }
+  const mids = new Set<string>();
+  for (const s of m.topSong ?? []) if (s?.songMid) mids.add(s.songMid);
   for (const t of m.topDataList ?? []) {
-    if (t?.repeatSong?.songMid)
-      targets.push({ mid: t.repeatSong.songMid, apply: (u) => (t.repeatSong.cover = u) });
-    if (t?.midnightSong?.songMid)
-      targets.push({ mid: t.midnightSong.songMid, apply: (u) => (t.midnightSong.cover = u) });
-    if (t?.favSongMid) targets.push({ mid: t.favSongMid, apply: (u) => (t.favSongCover = u) });
+    if (t?.repeatSong?.songMid) mids.add(t.repeatSong.songMid);
+    if (t?.midnightSong?.songMid) mids.add(t.midnightSong.songMid);
+    if (t?.favSongMid) mids.add(t.favSongMid);
   }
 
-  const cache = new Map<string, string | null>();
-  for (const t of targets) {
-    let url = cache.get(t.mid);
-    if (url === undefined) {
-      url = await fetchCover(t.mid);
-      cache.set(t.mid, url);
-    }
-    if (url) t.apply(url);
+  const unique = [...mids];
+  const results = await Promise.all(
+    unique.map(async (mid) => {
+      const cached = coverCache.get(mid);
+      if (cached !== undefined) return [mid, cached] as const;
+      const url = await fetchCover(mid);
+      coverCache.set(mid, url);
+      return [mid, url] as const;
+    })
+  );
+  const map = new Map(results);
+
+  for (const s of m.topSong ?? []) {
+    const c = s?.songMid ? map.get(s.songMid) : undefined;
+    if (c) s.cover = c;
+  }
+  for (const t of m.topDataList ?? []) {
+    const rc = t?.repeatSong?.songMid ? map.get(t.repeatSong.songMid) : undefined;
+    if (rc) t.repeatSong.cover = rc;
+    const mc = t?.midnightSong?.songMid ? map.get(t.midnightSong.songMid) : undefined;
+    if (mc) t.midnightSong.cover = mc;
+    const fc = t?.favSongMid ? map.get(t.favSongMid) : undefined;
+    if (fc) t.favSongCover = fc;
   }
 }
 
 export async function loadQqMusicReport(apiKey: string): Promise<unknown | null> {
   if (!apiKey) return null;
-  try {
-    const res = await fetch("https://a.y.qq.com/me/report", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        params: { timeKey: "m" },
-        comm: { skill_version: "0.0.3" },
-      }),
-    });
-    if (!res.ok) return null;
-    const data: any = await res.json();
-    await enrichCovers(data);
-    return data;
-  } catch {
-    return null;
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch("https://a.y.qq.com/me/report", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          params: { timeKey: "m" },
+          comm: { skill_version: "0.0.3" },
+        }),
+        signal: AbortSignal.timeout(6000),
+      });
+      if (!res.ok) continue;
+      const data: any = await res.json();
+      await enrichCovers(data);
+      return data;
+    } catch {
+      /* retry */
+    }
   }
+  return null;
 }
 
 export default async function handler(_req: any, res: any) {
   const data = await loadQqMusicReport(process.env.QQMUSIC_API_KEY || "");
 
   if (!data) {
-    res.statusCode = 204;
+    res.statusCode = 502;
+    res.setHeader("Cache-Control", "no-store");
     res.end();
     return;
   }
