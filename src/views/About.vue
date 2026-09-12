@@ -229,7 +229,7 @@ const music = computed(() => {
   const genres = (m.topGenre?.genre2Count ?? [])
     .slice()
     .sort((a, b) => b.sum - a.sum)
-    .slice(0, 3)
+    .slice(0, 1)
     .map((g) => g.name);
 
   const songHref = (mid?: string) =>
@@ -289,7 +289,6 @@ const music = computed(() => {
     bests,
     totalListens,
     hour: m.preferHour?.preferHour,
-    days: m.consDays?.conDays,
   };
 });
 
@@ -393,58 +392,6 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- 技术栈 -->
-    <section class="about-section">
-      <h2 class="section-title">TECH STACK</h2>
-      <p class="section-sub">正在学习和使用的技术</p>
-      <div class="tool-grid">
-        <div v-for="t in techStack" :key="t.name" class="tool-item">
-          <svg class="tool-icon" viewBox="0 0 24 24"><path :d="t.icon.path" :fill="t.color || '#' + t.icon.hex" /></svg>
-          <div class="tool-text">
-            <span class="tool-name">{{ t.name }}</span>
-            <span class="tool-desc">{{ t.desc }}</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 工具 -->
-    <section class="about-section">
-      <h2 class="section-title">TOOLS</h2>
-      <p class="section-sub">每天打开的家伙什</p>
-      <div class="tool-grid">
-        <div v-for="t in tools" :key="t.name" class="tool-item">
-          <svg class="tool-icon" viewBox="0 0 24 24"><path :d="t.icon.path" :fill="t.color || '#' + t.icon.hex" /></svg>
-          <div class="tool-text">
-            <span class="tool-name">{{ t.name }}</span>
-            <span class="tool-desc">{{ t.desc }}</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- GitHub 数据 -->
-    <section class="about-section">
-      <h2 class="section-title">GITHUB</h2>
-      <p class="section-sub">实时数据，来自 GitHub API</p>
-      <div class="gh-card">
-        <div class="gh-item">
-          <span class="gh-num">{{ ghLoading ? "…" : ghStats.followers ?? "—" }}</span>
-          <span class="gh-label">Followers</span>
-        </div>
-        <div class="gh-item">
-          <span class="gh-num">{{ ghLoading ? "…" : ghStats.repos ?? "—" }}</span>
-          <span class="gh-label">Public Repos</span>
-        </div>
-        <a
-          class="gh-link"
-          href="https://github.com/Rainan249"
-          target="_blank"
-          rel="noopener noreferrer"
-        >github.com/Rainan249 →</a>
-      </div>
-    </section>
-
     <!-- QQ 音乐听歌数据 -->
     <section v-if="music" class="about-section">
       <h2 class="section-title">MUSIC</h2>
@@ -498,7 +445,58 @@ onUnmounted(() => {
         </span>
         <span v-if="music.genres.length" class="music-chip">偏爱流派 · {{ music.genres.join(" / ") }}</span>
         <span v-if="music.hour !== undefined" class="music-chip">最爱时段 · {{ music.hour }} 点</span>
-        <span v-if="music.days" class="music-chip">连续听歌 · {{ music.days }} 天</span>
+      </div>
+    </section>
+
+    <!-- 技术栈 -->
+    <section class="about-section">
+      <h2 class="section-title">TECH STACK</h2>
+      <p class="section-sub">正在学习和使用的技术</p>
+      <div class="tool-grid">
+        <div v-for="t in techStack" :key="t.name" class="tool-item">
+          <svg class="tool-icon" viewBox="0 0 24 24"><path :d="t.icon.path" :fill="t.color || '#' + t.icon.hex" /></svg>
+          <div class="tool-text">
+            <span class="tool-name">{{ t.name }}</span>
+            <span class="tool-desc">{{ t.desc }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 工具 -->
+    <section class="about-section">
+      <h2 class="section-title">TOOLS</h2>
+      <p class="section-sub">每天打开的家伙什</p>
+      <div class="tool-grid">
+        <div v-for="t in tools" :key="t.name" class="tool-item">
+          <svg class="tool-icon" viewBox="0 0 24 24"><path :d="t.icon.path" :fill="t.color || '#' + t.icon.hex" /></svg>
+          <div class="tool-text">
+            <span class="tool-name">{{ t.name }}</span>
+            <span class="tool-desc">{{ t.desc }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GitHub 数据 -->
+    <section class="about-section">
+      <h2 class="section-title">GITHUB</h2>
+      <p class="section-sub">实时数据，来自 GitHub API</p>
+      <div class="gh-card">
+        <div class="gh-item">
+          <span class="gh-num">{{ ghLoading ? "…" : ghStats.followers ?? "—" }}</span>
+          <span class="gh-label">Followers</span>
+        </div>
+        <div class="gh-item">
+          <span class="gh-num">{{ ghLoading ? "…" : ghStats.repos ?? "—" }}</span>
+          <span class="gh-label">Public Repos</span>
+        </div>
+        <a
+          class="gh-link"
+          href="https://github.com/Rainan249"
+          target="_blank"
+          rel="noopener noreferrer"
+        >github.com/Rainan249 →</a>
       </div>
     </section>
 
@@ -938,9 +936,14 @@ onUnmounted(() => {
 
 .music-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
   margin-bottom: 16px;
+}
+
+.music-col {
+  grid-column: span 2;
+  min-width: 0;
 }
 
 .music-col-title {
@@ -1037,6 +1040,9 @@ onUnmounted(() => {
   }
   .music-grid {
     grid-template-columns: 1fr;
+  }
+  .music-col {
+    grid-column: auto;
   }
 }
 
