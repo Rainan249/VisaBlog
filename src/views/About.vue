@@ -5,6 +5,7 @@ import avatar from "../assets/头像.jpg";
 import { getAllPosts, getAllPostsWithContent } from "../lib/posts";
 import { burstConfetti } from "../lib/confetti";
 import {
+  siOpenjdk,
   siSpringboot,
   siVuedotjs,
   siMysql,
@@ -13,6 +14,8 @@ import {
   siNodedotjs,
   siIntellijidea,
   siGit,
+  siGithub,
+  siVercel,
   siGooglechrome,
   siObsidian,
   type SimpleIcon,
@@ -35,9 +38,20 @@ interface ToolItem {
   name: string;
   desc: string;
   color?: string;
+  /** 深色模式下的图标色：品牌色是纯黑的图标（GitHub / Vercel）必须给，否则深色下整块消失 */
+  colorDark?: string;
+}
+
+/** 图标颜色交给 CSS 变量，好让 :root.dark 覆盖；缺省一律用品牌色 */
+function iconStyle(t: ToolItem) {
+  const base = t.color || `#${t.icon.hex}`;
+  return { "--icon-color": base, "--icon-color-dark": t.colorDark || base };
 }
 
 const techStack: ToolItem[] = [
+  // OpenJDK 图标在 simple-icons 里是纯黑 #000000，深色模式下会看不见，所以覆盖成 Java 品牌钢蓝
+  // （同 IntelliJ IDEA 下面那条 color 覆盖的处理方式）
+  { icon: siOpenjdk, name: "Java", desc: "主力后端语言", color: "#5382a1" },
   { icon: siSpringboot, name: "Spring Boot", desc: "Java 后端框架" },
   { icon: siVuedotjs, name: "Vue 3", desc: "前端框架" },
   { icon: siMysql, name: "MySQL", desc: "关系型数据库" },
@@ -49,6 +63,9 @@ const techStack: ToolItem[] = [
 const tools: ToolItem[] = [
   { icon: siIntellijidea, name: "IntelliJ IDEA", desc: "主力 IDE", color: "#fe2d5b" },
   { icon: siGit, name: "Git", desc: "版本管理" },
+  // 这两个品牌色是纯黑，深色下换成本页深色正文色（--text 的 #e0e0e0），不另造新色
+  { icon: siGithub, name: "GitHub", desc: "代码托管 · 本站仓库", colorDark: "#e0e0e0" },
+  { icon: siVercel, name: "Vercel", desc: "本站部署", colorDark: "#e0e0e0" },
   { icon: siGooglechrome, name: "Chrome", desc: "调试 & 检索" },
   { icon: siObsidian, name: "Obsidian", desc: "知识库 · 本站内容源" },
 ];
@@ -161,6 +178,8 @@ interface QqSong {
   singerName: string;
   songMid: string;
   cover?: string;
+  /** 本月播放次数 */
+  sum?: number;
 }
 
 interface QqMonthTop {
@@ -174,9 +193,11 @@ interface QqMonthTop {
 }
 
 interface QqReport {
+  /** 服务端从 QQ 拉取这份数据的时刻，由 api/qq-music.ts 注入 */
+  updatedAt?: number;
   monthData?: {
     topSong?: QqSong[];
-    topSinger?: { singerName: string; singerMid: string }[];
+    topSinger?: { singerName: string; singerMid: string; sum?: number }[];
     topDataList?: QqMonthTop[];
     topGenre?: { genre2Count?: { name: string; sum: number }[] };
     preferHour?: { preferHour?: number };
@@ -280,23 +301,42 @@ async function loadMusic() {
   musicErrorDetail.value = musicError.value ? lastDetail : "";
 }
 
+/** 时间戳 → 2026-09-14 20:24（访问者本地时区）；拿不到或不合法就返回空串 */
+function formatStamp(ms: number): string {
+  const d = new Date(ms);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/** 秒 → 时长文案：不足 1 小时显示「N 分钟」，否则「X.X 小时」（对齐 skill 文档 me.md 的换算规则） */
+function formatDuration(sec: number): string {
+  const minutes = Math.round(sec / 60);
+  if (minutes < 60) return `${minutes} 分钟`;
+  return `${(sec / 3600).toFixed(1)} 小时`;
+}
+
 const music = computed(() => {
   const m = qqData.value?.monthData;
   if (!m) return null;
 
-  const songs = (m.topSong ?? []).slice(0, 3).map((s) => ({
+  const songs = (m.topSong ?? []).slice(0, 5).map((s) => ({
     name: s.songName,
     sub: s.singerName,
     href: `https://i2.y.qq.com/a/song/${s.songMid}`,
     cover: s.cover,
+    count: s.sum ? `${s.sum.toLocaleString("en-US")} 次` : undefined,
   }));
 
-  const singers = (m.topSinger ?? []).slice(0, 3).map((s) => ({
+  const singers = (m.topSinger ?? []).slice(0, 5).map((s) => ({
     name: s.singerName,
     href: `https://i2.y.qq.com/a/singer/${s.singerMid}`,
     avatar: s.singerMid
       ? `https://y.gtimg.cn/music/photo_new/T001R300x300M000${s.singerMid}.jpg`
       : undefined,
+    // topSinger 的 sum 是「时长（秒）」，不是次数 —— 见 skill 文档 me.md：歌手条目 sum = 时长，
+    // 歌曲条目 sum = 次数。直接甩 23234 会被读成 23234 次播放（整月也才 284 次），必须换算
+    count: s.sum ? formatDuration(s.sum) : undefined,
   }));
 
   const genres = (m.topGenre?.genre2Count ?? [])
@@ -356,7 +396,7 @@ const music = computed(() => {
   const totalListens = months.reduce((n, d) => n + (d.listenCount ?? 0), 0);
   const hour = m.preferHour?.preferHour;
 
-  // 底部数据条：标签在上、值在下，比原来「A · B」挤在同一行清楚得多
+  // 底部数据条：值在上、标签在下
   const stats: { label: string; value: string; unit?: string }[] = [];
   if (totalListens) {
     stats.push({
@@ -372,11 +412,18 @@ const music = computed(() => {
     stats.push({ label: "最爱时段", value: String(hour), unit: "点" });
   }
 
+  // 取不到就返回空串，模板里 v-if 会把整行隐藏 ——
+  // 部署后 CDN 可能还留着没有 updatedAt 的旧回包，不能显示成 1970 或 Invalid Date
+  const updatedAtText = qqData.value?.updatedAt
+    ? formatStamp(qqData.value.updatedAt)
+    : "";
+
   return {
     songs,
     singers,
     bests,
     stats,
+    updatedAtText,
   };
 });
 
@@ -496,6 +543,32 @@ onUnmounted(() => {
       </div>
 
       <template v-else>
+      <div class="music-grid">
+        <div class="music-col">
+          <p class="music-col-title">常听歌手</p>
+          <ul class="music-list">
+            <li v-for="(s, i) in music.singers" :key="s.name">
+              <img v-if="s.avatar" :src="s.avatar" alt="" class="music-avatar" loading="lazy" />
+              <span class="music-rank">{{ i + 1 }}</span>
+              <a :href="s.href" target="_blank" rel="noopener noreferrer" class="music-name" :title="s.name">{{ s.name }}</a>
+              <span v-if="s.count" class="music-count">{{ s.count }}</span>
+            </li>
+          </ul>
+        </div>
+        <div class="music-col">
+          <p class="music-col-title">常听歌曲</p>
+          <ul class="music-list">
+            <li v-for="(s, i) in music.songs" :key="s.name">
+              <img v-if="s.cover" :src="s.cover" alt="" class="music-cover" loading="lazy" />
+              <span class="music-rank">{{ i + 1 }}</span>
+              <a :href="s.href" target="_blank" rel="noopener noreferrer" class="music-name" :title="s.name">{{ s.name }}</a>
+              <span class="music-sub">{{ s.sub }}</span>
+              <span v-if="s.count" class="music-count">{{ s.count }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
       <div v-if="music.bests.length" class="music-bests">
         <div v-for="b in music.bests" :key="b.label" class="best-card">
           <img v-if="b.cover" :src="b.cover" alt="" class="best-cover" loading="lazy" />
@@ -514,30 +587,6 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div class="music-grid">
-        <div class="music-col">
-          <p class="music-col-title">常听歌曲</p>
-          <ul class="music-list">
-            <li v-for="(s, i) in music.songs" :key="s.name">
-              <img v-if="s.cover" :src="s.cover" alt="" class="music-cover" loading="lazy" />
-              <span class="music-rank">{{ i + 1 }}</span>
-              <a :href="s.href" target="_blank" rel="noopener noreferrer" class="music-name">{{ s.name }}</a>
-              <span class="music-sub">{{ s.sub }}</span>
-            </li>
-          </ul>
-        </div>
-        <div class="music-col">
-          <p class="music-col-title">常听歌手</p>
-          <ul class="music-list">
-            <li v-for="(s, i) in music.singers" :key="s.name">
-              <img v-if="s.avatar" :src="s.avatar" alt="" class="music-avatar" loading="lazy" />
-              <span class="music-rank">{{ i + 1 }}</span>
-              <a :href="s.href" target="_blank" rel="noopener noreferrer" class="music-name">{{ s.name }}</a>
-            </li>
-          </ul>
-        </div>
-      </div>
-
       <div v-if="music.stats.length" class="music-stats">
         <div v-for="s in music.stats" :key="s.label" class="music-stat">
           <div class="music-stat-value" :title="s.value + (s.unit || '')">
@@ -546,6 +595,8 @@ onUnmounted(() => {
           <div class="music-stat-label">{{ s.label }}</div>
         </div>
       </div>
+
+      <p v-if="music.updatedAtText" class="music-updated">数据更新于 {{ music.updatedAtText }}</p>
       </template>
     </section>
 
@@ -555,7 +606,7 @@ onUnmounted(() => {
       <p class="section-sub">正在学习和使用的技术</p>
       <div class="tool-grid">
         <div v-for="t in techStack" :key="t.name" class="tool-item">
-          <svg class="tool-icon" viewBox="0 0 24 24"><path :d="t.icon.path" :fill="t.color || '#' + t.icon.hex" /></svg>
+          <svg class="tool-icon" viewBox="0 0 24 24" :style="iconStyle(t)"><path :d="t.icon.path" /></svg>
           <div class="tool-text">
             <span class="tool-name">{{ t.name }}</span>
             <span class="tool-desc">{{ t.desc }}</span>
@@ -570,7 +621,7 @@ onUnmounted(() => {
       <p class="section-sub">每天打开的家伙什</p>
       <div class="tool-grid">
         <div v-for="t in tools" :key="t.name" class="tool-item">
-          <svg class="tool-icon" viewBox="0 0 24 24"><path :d="t.icon.path" :fill="t.color || '#' + t.icon.hex" /></svg>
+          <svg class="tool-icon" viewBox="0 0 24 24" :style="iconStyle(t)"><path :d="t.icon.path" /></svg>
           <div class="tool-text">
             <span class="tool-name">{{ t.name }}</span>
             <span class="tool-desc">{{ t.desc }}</span>
@@ -906,6 +957,16 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
+/* 颜色走 CSS 变量，好按主题切换：GitHub（#181717）/ Vercel（#000000）这类纯黑品牌色
+   在深色卡片（--card-bg: #222224）上会和背景融成一块，必须换浅色 */
+.tool-icon path {
+  fill: var(--icon-color);
+}
+
+:root.dark .tool-icon path {
+  fill: var(--icon-color-dark);
+}
+
 .tool-text {
   display: flex;
   flex-direction: column;
@@ -1098,14 +1159,18 @@ onUnmounted(() => {
 }
 
 .music-col-title {
-  margin: 0 0 10px;
-  font-size: 0.85rem;
+  margin: 0 0 12px;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-secondary);
+  text-align: center;
 }
 
+/* 列表铺满各自那半列：两列宽度天生一致，左右边界也对齐；
+   次数用 margin-left: auto 对齐到列右边缘，因此两列的数字都成一列 */
 .music-list {
   list-style: none;
+  width: 100%;
   margin: 0;
   padding: 0;
 }
@@ -1113,19 +1178,19 @@ onUnmounted(() => {
 .music-list li {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 0;
+  gap: 10px;
+  padding: 9px 0;
   min-width: 0;
 }
 
 .music-rank {
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: rgba(var(--accent-rgb), 0.12);
   color: var(--accent);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -1134,23 +1199,23 @@ onUnmounted(() => {
 }
 
 .music-cover {
-  width: 34px;
-  height: 34px;
-  border-radius: 6px;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
   object-fit: cover;
   flex-shrink: 0;
 }
 
 .music-avatar {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
 }
 
 .music-name {
-  font-size: 0.92rem;
+  font-size: 1rem;
   color: var(--text);
   text-decoration: none;
   overflow: hidden;
@@ -1166,16 +1231,29 @@ onUnmounted(() => {
 
 .music-sub {
   flex-shrink: 0;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   color: var(--text-tertiary);
 }
 
-/* 底部数据条：三条统计，值在上、标签在下，中间 1px 竖分隔 */
+/* 行尾的次数：推到最右，等宽数字避免各行上下抖动 */
+.music-count {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 0.82rem;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 底部数据条：三条统计，值在上、标签在下，三格等分且各自居中，中间 1px 竖分隔。
+   用 GitHub 数据卡（.gh-card）那套配方给它一个承载面 —— 否则一条裸 border-top
+   浮在区块末尾，和上面几张带边框的卡片不成一体 */
 .music-stats {
   display: flex;
   align-items: flex-start;
-  border-top: 1px solid var(--border);
-  padding-top: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card-bg);
+  padding: 18px 20px;
 }
 
 .music-stat {
@@ -1183,10 +1261,10 @@ onUnmounted(() => {
   flex: 1 1 0;
   min-width: 0;
   padding: 0 16px;
-}
-
-.music-stat:first-child {
-  padding-left: 0;
+  /* 三格等分，数值与标签各自在本格居中。
+     注意不能再有 :first-child { padding-left: 0 } —— 那是左对齐时代为了
+     让首格贴齐标题左边缘加的，一旦居中，这个不对称内边距会把第一格推偏 8px */
+  text-align: center;
 }
 
 .music-stat + .music-stat::before {
@@ -1199,16 +1277,7 @@ onUnmounted(() => {
   background: var(--border);
 }
 
-/* 数字用页面自己的 accent 显示数字（对齐写作统计的 .ws-num：1.5rem / 800 / accent），
-   单位与标签压到三级灰 —— 数字响、其余静 */
-.music-stat-label {
-  font-size: 0.78rem;
-  line-height: 1.4;
-  color: var(--text-tertiary);
-  margin-top: 5px;
-  white-space: nowrap;
-}
-
+/* 数值用页面自己的 accent（对齐写作统计的 .ws-num：1.5rem / 800 / accent）—— 数字响、其余静 */
 .music-stat-value {
   font-size: 1.5rem;
   font-weight: 800;
@@ -1221,11 +1290,28 @@ onUnmounted(() => {
   text-overflow: ellipsis;
 }
 
+/* 标签提到二级灰：三级灰在这个底色上只有 2.85:1（深色约 3.15:1），低于正文可读标准 */
+.music-stat-label {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  margin-top: 5px;
+  white-space: nowrap;
+}
+
 .music-stat-unit {
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-tertiary);
   margin-left: 3px;
+}
+
+/* 数据抓取时刻：写法对齐页面已有的 .runtime（小字 + 三级灰 + 居中） */
+.music-updated {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-tertiary);
 }
 
 @media (max-width: 500px) {
@@ -1241,12 +1327,37 @@ onUnmounted(() => {
   .music-col {
     grid-column: auto;
   }
-  /* 窄屏收一档：流派名是文字（最长可能 4 个汉字），1.5rem 会被省略号截掉 */
+  /* 单列下每行只剩约 327px，缩略图退回页面原有的 34px 量级，给歌名留宽度 */
+  .music-cover,
+  .music-avatar {
+    width: 34px;
+    height: 34px;
+  }
+  .music-list li {
+    padding: 6px 0;
+  }
+  /* 窄屏收一档：流派名是文字（最长可能 4 个汉字），1.5rem 会被省略号截掉。
+     面板内边距也要收，否则 375px 下三格每格只剩约 75px，装不下「1,946 次」 */
+  .music-stats {
+    padding: 14px 12px;
+  }
   .music-stat {
     padding: 0 10px;
   }
   .music-stat-value {
     font-size: 1.3rem;
+  }
+}
+
+/* 宽屏才收：两列各自在自己的半列里再窄一档。两列同值，所以仍然等宽、数字仍对齐。
+   用 px 而不是百分比 —— 容器是 max-width:760px，视口一窄每列就跟着窄
+   （视口 700px 时每列仅约 321px），百分比会继续按比例压缩、白白截断长歌名；
+   px 上限在列宽本身不足时自动失效，不会雪上加霜。
+   320px 由最长歌名那一行决定，再窄 Rolling in the Deep 就会被省略号截断 */
+@media (min-width: 501px) {
+  .music-list {
+    max-width: 320px;
+    margin: 0 auto;
   }
 }
 

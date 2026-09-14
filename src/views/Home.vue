@@ -21,6 +21,28 @@ const timeText = ref("");
 const scrollProgress = ref(0); // 0 = top, 1 = bottom
 const isBottomVisible = ref(false);
 
+// CodeTime 编程总时长。codetime.dev 没有 CORS 头，前端只能走自己的 /api/codetime 代理
+type CodeTime = { label: string; message: string; seconds: number | null };
+const codeTime = ref<CodeTime | null>(null);
+const codeTimeFailed = ref(false);
+
+/** 秒 → 「30 小时 57 分」；不足 1 小时只显示分钟 */
+function formatCodingTime(sec: number): string {
+  const h = Math.floor(sec / 3600);
+  const m = Math.round((sec % 3600) / 60);
+  if (!h) return `${m} 分钟`;
+  return m ? `${h} 小时 ${m} 分` : `${h} 小时`;
+}
+
+/** 解析成功显示中文时长，解析失败回退上游原文 —— 文案变化不会把徽章弄空 */
+const codeTimeText = computed(() => {
+  const ct = codeTime.value;
+  if (!ct) return "";
+  return typeof ct.seconds === "number"
+    ? `${ct.label} · ${formatCodingTime(ct.seconds)}`
+    : `${ct.label} · ${ct.message}`;
+});
+
 // 动画状态
 let currentRadius = 0;
 let targetRadius = 0;
@@ -340,6 +362,18 @@ onMounted(() => {
       };
     })
     .catch(() => {});
+  fetch("/api/codetime")
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data: CodeTime | null) => {
+      if (!data) {
+        codeTimeFailed.value = true;
+        return;
+      }
+      codeTime.value = data;
+    })
+    .catch(() => {
+      codeTimeFailed.value = true;
+    });
   const page = pageRef.value;
   window.addEventListener("mousemove", onMouseMove, { passive: true });
   page?.addEventListener("scroll", onScroll, { passive: true });
@@ -439,7 +473,31 @@ onUnmounted(() => {
             <p>No fancy decorations, merely documenting my growth.</p>
             <p>Life is code. I will debug it.</p>
             <div class="badge-button-row">
-              <a href="https://codetime.dev" target="_blank" rel="noopener noreferrer">
+              <a
+                v-if="codeTime"
+                class="codetime-pill"
+                href="https://codetime.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <!-- CodeTime 官方 logo（品牌色 #1874A8）。本地内联，不把远端 SVG 注进 DOM -->
+                <svg class="codetime-logo" viewBox="0 0 377 377" width="16" height="16" aria-hidden="true">
+                  <circle cx="188.5" cy="188.5" r="172.5" fill="#D9D9D9" stroke="#1874A8" stroke-width="32" />
+                  <path
+                    d="M289.352 113L307.016 140.904L223.944 189.416L307.016 237.032L288.712 265.832L189 203.88V175.208L289.352 113Z"
+                    fill="#2E2E2E"
+                  />
+                </svg>
+                {{ codeTimeText }}
+              </a>
+              <!-- 代理挂了就退回官方 shields.io 徽章，不让这一行整个空掉 -->
+              <a
+                v-else-if="codeTimeFailed"
+                class="codetime-fallback"
+                href="https://codetime.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <img src="https://img.shields.io/endpoint?style=flat-square&color=222222&url=https%3A%2F%2Fcodetime.dev%2Fv3%2Fusers%2Fshield%3Fuid%3D37245%26label_color%3D334155" alt="CodeTime Badge" referrerpolicy="no-referrer" />
               </a>
               <router-link to="/about" class="more-about-btn">More about me</router-link>
@@ -979,28 +1037,46 @@ onUnmounted(() => {
   object-position: center;
 }
 
-.codetime-badge {
-  margin-top: 16px !important;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-}
-
-.codetime-badge img {
-  height: 22px;
-  vertical-align: middle;
-}
-
 .badge-button-row {
   margin-top: 16px;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  /* 两个胶囊放大后窄屏一行放不下，允许换行，别硬溢出 */
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.badge-button-row > a:first-child img {
+/* CodeTime 胶囊：与右侧 .more-about-btn 同一套配方（32px 高 / 16px 圆角 / accent 淡底） */
+.codetime-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 14px;
+  background: rgba(0, 47, 167, 0.1);
+  color: #002fa7;
+  border: 1px solid rgba(0, 47, 167, 0.2);
+  border-radius: 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.codetime-pill:hover {
+  background: rgba(0, 47, 167, 0.15);
+  border-color: rgba(0, 47, 167, 0.4);
+}
+
+.codetime-logo {
+  flex-shrink: 0;
+}
+
+/* 代理不可用时的官方徽章兜底 */
+.codetime-fallback img {
   height: 22px;
   vertical-align: middle;
 }
@@ -1009,14 +1085,14 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   align-self: flex-end;
-  height: 28px;
-  padding: 0 16px;
+  height: 32px;
+  padding: 0 18px;
   background: rgba(0, 47, 167, 0.1);
   color: #002fa7;
   border: 1px solid rgba(0, 47, 167, 0.2);
-  border-radius: 14px;
+  border-radius: 16px;
   text-decoration: none;
-  font-size: 0.85rem;
+  font-size: 0.93rem;
   font-weight: 600;
   transition: all 0.2s ease;
 }
@@ -1288,6 +1364,22 @@ onUnmounted(() => {
 
 .home-page.dark .home-about-text {
   color: #a0a0a0;
+}
+
+/* 徽章胶囊与右侧按钮：原来硬编码 #002fa7，在 #0b0b10 上只有 1.84:1，等于看不见。
+   深色改用站点自己的深色 accent #82aaff（页面别处已经在用） */
+.home-page.dark .codetime-pill,
+.home-page.dark .more-about-btn {
+  background: rgba(130, 170, 255, 0.1);
+  color: #82aaff;
+  border-color: rgba(130, 170, 255, 0.2);
+}
+
+.home-page.dark .codetime-pill:hover,
+.home-page.dark .more-about-btn:hover {
+  background: rgba(130, 170, 255, 0.15);
+  border-color: rgba(130, 170, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(130, 170, 255, 0.15);
 }
 
 .home-page.dark .education-card {

@@ -6,6 +6,7 @@ import path from "node:path";
 import matter from "gray-matter";
 import { buildPostSlug } from "./src/lib/slug.ts";
 import { getQqMusicPayload } from "./api/qq-music.ts";
+import { getCodetimePayload } from "./api/codetime.ts";
 
 const IMG_DIR = "03 - resources/小小储物袋/Picture";
 const SITE_URL = (process.env.VITE_SITE_URL || "").replace(/\/$/, "");
@@ -206,6 +207,28 @@ export default defineConfig(({ mode }) => {
               res.setHeader("Cache-Control", "no-store");
               res.setHeader("Content-Type", "application/json; charset=utf-8");
               res.end(JSON.stringify({ error: "qq-music unavailable" }));
+              return;
+            }
+            res.statusCode = 200;
+            res.setHeader("Cache-Control", "no-store");
+            res.setHeader("Content-Type", "application/json; charset=utf-8");
+            res.end(body);
+          });
+        },
+      },
+      {
+        name: "codetime-dev-api",
+        configureServer(server) {
+          // 开发时也走同一份代理逻辑：codetime.dev 没有 CORS 头，
+          // 若不在 dev 里顶掉这个路径，请求会落到 SPA fallback 拿到 HTML，
+          // 徽章就永远只显示 shields.io 兜底那张
+          server.middlewares.use("/api/codetime", async (_req, res) => {
+            const body = await getCodetimePayload();
+            if (!body) {
+              res.statusCode = 502;
+              res.setHeader("Cache-Control", "no-store");
+              res.setHeader("Content-Type", "application/json; charset=utf-8");
+              res.end(JSON.stringify({ error: "codetime unavailable" }));
               return;
             }
             res.statusCode = 200;

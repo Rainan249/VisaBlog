@@ -120,6 +120,12 @@ async function buildPayload(apiKey: string): Promise<string | null> {
   const data: any = await res.json();
   if (!data?.monthData) return null;
 
+  // 打上「这份数据是什么时候从 QQ 拉的」。
+  // 上游顶层虽然有个 ts，但实测它只是响应时刻（与本机 Date.now() 相差 22ms），没有额外信息，
+  // 所以用我们自己的时钟。必须写进回包本身：CDN 会按 s-maxage 缓存整份 body，
+  // 前端不能用「浏览器当前时间」冒充数据新鲜度。
+  data.updatedAt = Date.now();
+
   // 封面最多等 COVER_BUDGET_MS，超时也照样把报告返回去
   await Promise.race([
     enrichCovers(data).catch(() => undefined),
