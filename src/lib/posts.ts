@@ -30,8 +30,20 @@ function getAllPostsRaw(): Post[] {
 
     // 原始相对路径（用于查找文件创建时间）
     const rel = filepath.replace(/^\/posts\//, "").replace(/\.md$/, "");
-    // 友好 URL：第二层目录 / 去编号文章名
-    let slug = buildPostSlug(rel);
+
+    const raw = modules[filepath] as string;
+    const { data, content } = matter(raw);
+
+    // 兼容 "tags: xxx" 这种非数组写法
+    const rawTags = (data as { tags?: unknown }).tags;
+    const tags: string[] = Array.isArray(rawTags)
+      ? rawTags.map(String)
+      : rawTags
+        ? [String(rawTags)]
+        : [];
+
+    // 友好 URL：分类取 frontmatter 的 tags[0]（没写 tags 就不加分类前缀）
+    let slug = buildPostSlug(rel, tags);
 
     // 处理重名：追加 -2、-3…
     const seen = usedSlugs.get(slug);
@@ -42,9 +54,6 @@ function getAllPostsRaw(): Post[] {
       usedSlugs.set(slug, 1);
     }
 
-    const raw = modules[filepath] as string;
-    const { data, content } = matter(raw);
-
     posts.push({
       slug,
       title: data.title || slug.split("/").pop() || slug,
@@ -53,7 +62,7 @@ function getAllPostsRaw(): Post[] {
           ? data.date.toISOString().split("T")[0]
           : String(data.date)
         : createTimes[rel] || new Date().toISOString().split("T")[0],
-      tags: data.tags || [],
+      tags,
       content,
     });
   }

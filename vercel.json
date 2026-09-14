@@ -1,4 +1,10 @@
 {
+  "functions": {
+    "api/qq-music.ts": {
+      "maxDuration": 30
+    }
+  },
+  "regions": ["hkg1"],
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }

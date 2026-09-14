@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MUSIC 数据条 · 现状 vs 升级</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px 24px 64px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+    background: #f0f1f4; color: #1a1a1a; line-height: 1.6;
+  }
+  h1 { font-size: 1.3rem; margin: 0 0 6px; }
+  .lede { color: #666; font-size: .88rem; margin: 0 0 28px; max-width: 62ch; }
+  .lede code { background: #e4e6ea; padding: 1px 5px; border-radius: 4px; font-size: .85em; }
+
+  .opt { margin-bottom: 34px; }
+  .opt-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .opt-key { font-size: .72rem; font-weight: 700; letter-spacing: .08em; color: #fff; background: #8a8f98; padding: 2px 8px; border-radius: 999px; }
+  .opt-key.up { background: #002fa7; }
+  .opt-name { font-size: 1rem; font-weight: 650; }
+  .opt-note { font-size: .82rem; color: #666; }
+  .opt-note b { color: #002fa7; font-weight: 600; }
+
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 720px) { .pair { grid-template-columns: 1fr; } }
+
+  .light { --card:#fff; --border:#eee; --text:#333; --text-secondary:#666; --text-tertiary:#999; --accent:#002fa7; --accent-rgb:0,47,167; --bg-secondary:#fafbfd; }
+  .dark  { --card:#222224; --border:#2c2c2e; --text:#e0e0e0; --text-secondary:#a0a0a0; --text-tertiary:#666; --accent:#82aaff; --accent-rgb:130,170,255; --bg-secondary:#1c1c1e; }
+
+  .panel { padding: 16px 18px 20px; border-radius: 14px; }
+  .light.panel { background: #fff; }
+  .dark.panel  { background: #161618; }
+  .tag-mode { font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; color: var(--text-tertiary); margin: 0 0 12px; }
+
+  /* 页面既有装置：写作统计 .ws-item / .ws-num / .ws-label */
+  .write-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .ws-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 16px 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--card);
+  }
+  .ws-num { font-size: 1.5rem; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .ws-label { font-size: .78rem; color: var(--text-tertiary); }
+
+  /* ---- 现状：灰色 1.08rem/600，无容器、无 accent ---- */
+  .music-stats-now {
+    display: flex; align-items: flex-start;
+    border-top: 1px solid var(--border); padding-top: 16px;
+  }
+  .music-stats-now .cell { position: relative; flex: 1 1 0; min-width: 0; padding: 0 16px; }
+  .music-stats-now .cell:first-child { padding-left: 0; }
+  .music-stats-now .cell + .cell::before {
+    content: ""; position: absolute; left: 0; top: 2px; bottom: 2px; width: 1px; background: var(--border);
+  }
+  .music-stats-now .k { font-size: .72rem; color: var(--text-tertiary); margin-bottom: 3px; white-space: nowrap; }
+  .music-stats-now .v {
+    font-size: 1.08rem; font-weight: 600; color: var(--text);
+    font-variant-numeric: tabular-nums; letter-spacing: -.01em; white-space: nowrap;
+  }
+  .music-stats-now .u { font-size: .74rem; font-weight: 500; color: var(--text-tertiary); margin-left: 3px; }
+
+  /* ---- 升级：对齐 .ws-num 的 accent 显示数字 ---- */
+  .music-stats-up {
+    display: flex; align-items: flex-start;
+    border-top: 1px solid var(--border); padding-top: 18px;
+  }
+  .music-stats-up .cell { position: relative; flex: 1 1 0; min-width: 0; padding: 0 16px; }
+  .music-stats-up .cell:first-child { padding-left: 0; }
+  .music-stats-up .cell + .cell::before {
+    content: ""; position: absolute; left: 0; top: 2px; bottom: 2px; width: 1px; background: var(--border);
+  }
+  .music-stats-up .v {
+    font-size: 1.5rem; font-weight: 800; color: var(--accent);
+    font-variant-numeric: tabular-nums; letter-spacing: -.02em; line-height: 1.1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .music-stats-up .u { font-size: .8rem; font-weight: 600; color: var(--text-tertiary); margin-left: 3px; }
+  .music-stats-up .k { font-size: .78rem; color: var(--text-tertiary); margin-top: 5px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<h1>MUSIC 数据条 · 现状 vs 升级</h1>
+<p class="lede">
+  这一页自己已经有「accent 显示数字」这个最强装置（WRITING 区块的 <code>.ws-num</code>：1.5rem / 800 / accent）。
+  数据条现在是灰色 1.08rem / 600、没有任何 accent —— 等于退出了页面自己的词汇。升级 = 把它抬到邻居已有的高度，
+  <b>数字变响、其余变静</b>，但不再加第三排卡片。
+</p>
+
+<!-- 页面既有装置 -->
+<div class="opt">
+  <div class="opt-head">
+    <span class="opt-key" style="background:#4a5568">参照</span>
+    <span class="opt-name">页面既有装置 · WRITING 区块</span>
+    <span class="opt-note">这是这一页<b>自己</b>的数字语言，不是我从外面搬来的模板</span>
+  </div>
+  <div class="pair">
+    <div class="panel light">
+      <p class="tag-mode">Light</p>
+      <div class="write-stats">
+        <div class="ws-item"><span class="ws-num">10</span><span class="ws-label">篇文章</span></div>
+        <div class="ws-item"><span class="ws-num">58,432</span><span class="ws-label">累计字数</span></div>
+        <div class="ws-item"><span class="ws-num">6</span><span class="ws-label">个标签</span></div>
+      </div>
+    </div>
+    <div class="panel dark">
+      <p class="tag-mode">Dark</p>
+      <div class="write-stats">
+        <div class="ws-item"><span class="ws-num">10</span><span class="ws-label">篇文章</span></div>
+        <div class="ws-item"><span class="ws-num">58,432</span><span class="ws-label">累计字数</span></div>
+        <div class="ws-item"><span class="ws-num">6</span><span class="ws-label">个标签</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 现状 -->
+<div class="opt">
+  <div class="opt-head">
+    <span class="opt-key">现状</span>
+    <span class="opt-name">灰色数据条（刚上线的 A 方案）</span>
+    <span class="opt-note">层级对了，但<b>全是灰的</b>：数字 1.08rem/600、无 accent，和一个普通表格没区别，收不住这一段的尾</span>
+  </div>
+  <div class="pair">
+    <div class="panel light">
+      <p class="tag-mode">Light</p>
+      <div class="music-stats-now">
+        <div class="cell"><div class="k">累计听歌</div><div class="v">1,247<span class="u">次</span></div></div>
+        <div class="cell"><div class="k">偏爱流派</div><div class="v">流行</div></div>
+        <div class="cell"><div class="k">最爱时段</div><div class="v">23<span class="u">点</span></div></div>
+      </div>
+    </div>
+    <div class="panel dark">
+      <p class="tag-mode">Dark</p>
+      <div class="music-stats-now">
+        <div class="cell"><div class="k">累计听歌</div><div class="v">1,247<span class="u">次</span></div></div>
+        <div class="cell"><div class="k">偏爱流派</div><div class="v">流行</div></div>
+        <div class="cell"><div class="k">最爱时段</div><div class="v">23<span class="u">点</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 升级 -->
+<div class="opt">
+  <div class="opt-head">
+    <span class="opt-key up">升级</span>
+    <span class="opt-name">对齐页面的 accent 显示数字</span>
+    <span class="opt-note">数字 → <b>1.5rem / 800 / accent</b>，单位与标签压到三级灰；数字在上、标签在下（同 <code>.ws-num</code> → <code>.ws-label</code> 的顺序）。一条分隔线 + 三个响数字，成为这一段的收尾高峰</span>
+  </div>
+  <div class="pair">
+    <div class="panel light">
+      <p class="tag-mode">Light</p>
+      <div class="music-stats-up">
+        <div class="cell"><div class="v">1,247<span class="u">次</span></div><div class="k">累计听歌</div></div>
+        <div class="cell"><div class="v">流行</div><div class="k">偏爱流派</div></div>
+        <div class="cell"><div class="v">23<span class="u">点</span></div><div class="k">最爱时段</div></div>
+      </div>
+    </div>
+    <div class="panel dark">
+      <p class="tag-mode">Dark</p>
+      <div class="music-stats-up">
+        <div class="cell"><div class="v">1,247<span class="u">次</span></div><div class="k">累计听歌</div></div>
+        <div class="cell"><div class="v">流行</div><div class="k">偏爱流派</div></div>
+        <div class="cell"><div class="v">23<span class="u">点</span></div><div class="k">最爱时段</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

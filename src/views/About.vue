@@ -186,25 +186,98 @@ interface QqReport {
 }
 
 const qqData = ref<QqReport | null>(null);
-const musicLoading = ref(false);
+const musicLoading = ref(true);
+const musicError = ref(false);
+const musicErrorDetail = ref("");
+
+/* 本地缓存：先渲染上次的数据，再向后端要最新的，避免首屏空白。
+   刻意不设过期时间——哪怕数据是旧的也先显示出来，随后静默更新，
+   这样只有「这辈子第一次访问」才会真正看到加载态。 */
+const QQ_CACHE_KEY = "qq-music-report:v1";
+
+function readMusicCache(): QqReport | null {
+  try {
+    const raw = localStorage.getItem(QQ_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { at?: number; data?: QqReport };
+    if (!parsed?.data?.monthData) return null;
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function writeMusicCache(data: QqReport) {
+  try {
+    localStorage.setItem(QQ_CACHE_KEY, JSON.stringify({ at: Date.now(), data }));
+  } catch {
+    /* 无痕模式 / 超出配额，忽略即可 */
+  }
+}
+
+/** 兼容不支持 AbortSignal.timeout 的环境（旧 Safari） */
+function timeoutSignal(ms: number): AbortSignal | undefined {
+  if (
+    typeof AbortSignal !== "undefined" &&
+    typeof AbortSignal.timeout === "function"
+  ) {
+    return AbortSignal.timeout(ms);
+  }
+  if (typeof AbortController === "undefined") return undefined;
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+}
+
+/**
+ * 首次访问时后端可能是冷启动（Serverless 函数还要再去请求上游），
+ * 单次请求偶发超时很正常，所以多给几次机会，整体覆盖约 15s。
+ */
+const MUSIC_RETRY_DELAYS = [0, 1500, 4000];
+const MUSIC_ATTEMPT_TIMEOUT_MS = 8000;
 
 async function loadMusic() {
-  musicLoading.value = true;
-  for (let attempt = 0; attempt < 2; attempt++) {
+  // 有本地缓存就先渲染旧数据，不要闪骨架屏
+  if (!qqData.value) qqData.value = readMusicCache();
+  musicLoading.value = !qqData.value;
+  musicError.value = false;
+  musicErrorDetail.value = "";
+
+  let lastDetail = "";
+
+  for (const delay of MUSIC_RETRY_DELAYS) {
+    if (delay) await new Promise((r) => setTimeout(r, delay));
     try {
-      const res = await fetch("/api/qq-music");
+      const res = await fetch("/api/qq-music", {
+        signal: timeoutSignal(MUSIC_ATTEMPT_TIMEOUT_MS),
+        cache: "no-store",
+      });
       const type = res.headers.get("content-type") || "";
       if (res.ok && type.includes("application/json")) {
-        qqData.value = (await res.json()) as QqReport;
-        musicLoading.value = false;
-        return;
+        const data = (await res.json()) as QqReport;
+        if (data?.monthData) {
+          qqData.value = data;
+          writeMusicCache(data);
+          musicLoading.value = false;
+          musicError.value = false;
+          musicErrorDetail.value = "";
+          return;
+        }
+        lastDetail = "返回数据为空";
+      } else {
+        lastDetail = `接口返回 HTTP ${res.status}`;
       }
-    } catch {
-      /* retry */
+    } catch (err) {
+      const name = err instanceof Error ? err.name : "";
+      lastDetail =
+        name === "TimeoutError" || name === "AbortError" ? "请求超时" : "网络错误";
     }
-    await new Promise((r) => setTimeout(r, 600));
   }
+
   musicLoading.value = false;
+  // 已经有缓存的旧数据时不算失败，继续展示旧数据就行
+  musicError.value = !qqData.value;
+  musicErrorDetail.value = musicError.value ? lastDetail : "";
 }
 
 const music = computed(() => {
@@ -281,14 +354,29 @@ const music = computed(() => {
 
   const months = m.monthDetailList ?? [];
   const totalListens = months.reduce((n, d) => n + (d.listenCount ?? 0), 0);
+  const hour = m.preferHour?.preferHour;
+
+  // 底部数据条：标签在上、值在下，比原来「A · B」挤在同一行清楚得多
+  const stats: { label: string; value: string; unit?: string }[] = [];
+  if (totalListens) {
+    stats.push({
+      label: "累计听歌",
+      value: totalListens.toLocaleString("en-US"),
+      unit: "次",
+    });
+  }
+  if (genres.length) {
+    stats.push({ label: "偏爱流派", value: genres.join(" / ") });
+  }
+  if (hour !== undefined) {
+    stats.push({ label: "最爱时段", value: String(hour), unit: "点" });
+  }
 
   return {
     songs,
     singers,
-    genres,
     bests,
-    totalListens,
-    hour: m.preferHour?.preferHour,
+    stats,
   };
 });
 
@@ -393,10 +481,21 @@ onUnmounted(() => {
     </div>
 
     <!-- QQ 音乐听歌数据 -->
-    <section v-if="music" class="about-section">
+    <section v-if="music || musicLoading || musicError" class="about-section">
       <h2 class="section-title">MUSIC</h2>
       <p class="section-sub">本月 QQ 音乐听歌报告</p>
 
+      <div v-if="!music" class="music-placeholder">
+        <template v-if="musicLoading">
+          <span v-for="n in 4" :key="n" class="music-skeleton" />
+        </template>
+        <p v-else class="music-failed">
+          听歌数据暂时没取到<template v-if="musicErrorDetail">（{{ musicErrorDetail }}）</template>
+          <button type="button" class="music-retry" @click="loadMusic">重新加载</button>
+        </p>
+      </div>
+
+      <template v-else>
       <div v-if="music.bests.length" class="music-bests">
         <div v-for="b in music.bests" :key="b.label" class="best-card">
           <img v-if="b.cover" :src="b.cover" alt="" class="best-cover" loading="lazy" />
@@ -439,13 +538,15 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div class="music-chips">
-        <span v-if="music.totalListens" class="music-chip">
-          累计听歌 · {{ music.totalListens }} 次
-        </span>
-        <span v-if="music.genres.length" class="music-chip">偏爱流派 · {{ music.genres.join(" / ") }}</span>
-        <span v-if="music.hour !== undefined" class="music-chip">最爱时段 · {{ music.hour }} 点</span>
+      <div v-if="music.stats.length" class="music-stats">
+        <div v-for="s in music.stats" :key="s.label" class="music-stat">
+          <div class="music-stat-value" :title="s.value + (s.unit || '')">
+            {{ s.value }}<span v-if="s.unit" class="music-stat-unit">{{ s.unit }}</span>
+          </div>
+          <div class="music-stat-label">{{ s.label }}</div>
+        </div>
       </div>
+      </template>
     </section>
 
     <!-- 技术栈 -->
@@ -868,6 +969,56 @@ onUnmounted(() => {
 
 /* ===== QQ 音乐 ===== */
 
+.music-placeholder {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.music-skeleton {
+  height: 70px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  animation: music-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes music-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.music-failed {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-tertiary);
+}
+
+.music-retry {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--accent);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.music-retry:hover {
+  border-color: rgba(var(--accent-rgb), 0.4);
+  background: rgba(var(--accent-rgb), 0.05);
+}
+
 .music-bests {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1019,23 +1170,69 @@ onUnmounted(() => {
   color: var(--text-tertiary);
 }
 
-.music-chips {
+/* 底部数据条：三条统计，值在上、标签在下，中间 1px 竖分隔 */
+.music-stats {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  align-items: flex-start;
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
 }
 
-.music-chip {
+.music-stat {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 16px;
+}
+
+.music-stat:first-child {
+  padding-left: 0;
+}
+
+.music-stat + .music-stat::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 1px;
+  background: var(--border);
+}
+
+/* 数字用页面自己的 accent 显示数字（对齐写作统计的 .ws-num：1.5rem / 800 / accent），
+   单位与标签压到三级灰 —— 数字响、其余静 */
+.music-stat-label {
   font-size: 0.78rem;
-  padding: 4px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg-secondary);
-  color: var(--text-secondary);
+  line-height: 1.4;
+  color: var(--text-tertiary);
+  margin-top: 5px;
+  white-space: nowrap;
+}
+
+.music-stat-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.music-stat-unit {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-left: 3px;
 }
 
 @media (max-width: 500px) {
   .music-bests {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .music-placeholder {
     grid-template-columns: repeat(2, 1fr);
   }
   .music-grid {
@@ -1043,6 +1240,13 @@ onUnmounted(() => {
   }
   .music-col {
     grid-column: auto;
+  }
+  /* 窄屏收一档：流派名是文字（最长可能 4 个汉字），1.5rem 会被省略号截掉 */
+  .music-stat {
+    padding: 0 10px;
+  }
+  .music-stat-value {
+    font-size: 1.3rem;
   }
 }
 

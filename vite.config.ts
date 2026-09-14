@@ -5,7 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { buildPostSlug } from "./src/lib/slug.ts";
-import { loadQqMusicReport } from "./api/qq-music.ts";
+import { getQqMusicPayload } from "./api/qq-music.ts";
 
 const IMG_DIR = "03 - resources/小小储物袋/Picture";
 const SITE_URL = (process.env.VITE_SITE_URL || "").replace(/\/$/, "");
@@ -21,8 +21,18 @@ function collectPosts(): { slug: string; title: string; date: string; excerpt: s
         if (entry.name === ".obsidian") continue;
         walk(full);
       } else if (entry.name.endsWith(".md")) {
-        const slug = buildPostSlug(path.relative(postsDir, full).replace(/\\/g, "/"));
         const { data, content } = matter(fs.readFileSync(full, "utf-8"));
+        // 与 src/lib/posts.ts 保持一致：分类取 tags[0]
+        const rawTags = (data as { tags?: unknown }).tags;
+        const tags: string[] = Array.isArray(rawTags)
+          ? rawTags.map(String)
+          : rawTags
+            ? [String(rawTags)]
+            : [];
+        const slug = buildPostSlug(
+          path.relative(postsDir, full).replace(/\\/g, "/"),
+          tags
+        );
         const excerpt = content
           .replace(/```[\s\S]*?```/g, " ")
           .replace(/!?\[[^\]]*\]\([^)]*\)/g, " ")
@@ -188,14 +198,20 @@ export default defineConfig(({ mode }) => {
         name: "qq-music-dev-api",
         configureServer(server) {
           server.middlewares.use("/api/qq-music", async (_req, res) => {
-            const data = await loadQqMusicReport(qqMusicKey);
-            if (!data) {
-              res.statusCode = 204;
-              res.end();
+            // maxAgeMs = 0：开发时每次都触发一次后台刷新，但请求本身立刻返回已有缓存，
+            // 不会再出现「第一次请求卡在上游、页面空白」的情况
+            const body = await getQqMusicPayload(qqMusicKey, 0);
+            if (!body) {
+              res.statusCode = 502;
+              res.setHeader("Cache-Control", "no-store");
+              res.setHeader("Content-Type", "application/json; charset=utf-8");
+              res.end(JSON.stringify({ error: "qq-music unavailable" }));
               return;
             }
+            res.statusCode = 200;
+            res.setHeader("Cache-Control", "no-store");
             res.setHeader("Content-Type", "application/json; charset=utf-8");
-            res.end(JSON.stringify(data));
+            res.end(body);
           });
         },
       },
