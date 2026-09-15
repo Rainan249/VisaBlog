@@ -356,12 +356,12 @@ async function loadMusic() {
   musicErrorDetail.value = musicError.value ? lastDetail : "";
 }
 
-/** 时间戳 → 2026-09-14 20:24（访问者本地时区）；拿不到或不合法就返回空串 */
+/** 时间戳 → 2026-09-14 20:24:03（访问者本地时区）；拿不到或不合法就返回空串 */
 function formatStamp(ms: number): string {
   const d = new Date(ms);
   if (Number.isNaN(d.getTime())) return "";
   const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
 /** 秒 → 时长文案：不足 1 小时显示「N 分钟」，否则「X.X 小时」（对齐 skill 文档 me.md 的换算规则） */
