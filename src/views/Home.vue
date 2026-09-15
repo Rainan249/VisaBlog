@@ -22,25 +22,19 @@ const scrollProgress = ref(0); // 0 = top, 1 = bottom
 const isBottomVisible = ref(false);
 
 // CodeTime 编程总时长。codetime.dev 没有 CORS 头，前端只能走自己的 /api/codetime 代理
+// seconds 是代理顺手解析出的秒数；页面只用上游原文，这个字段仍留在响应里备用
 type CodeTime = { label: string; message: string; seconds: number | null };
 const codeTime = ref<CodeTime | null>(null);
 const codeTimeFailed = ref(false);
 
-/** 秒 → 「30 小时 57 分」；不足 1 小时只显示分钟 */
-function formatCodingTime(sec: number): string {
-  const h = Math.floor(sec / 3600);
-  const m = Math.round((sec % 3600) / 60);
-  if (!h) return `${m} 分钟`;
-  return m ? `${h} 小时 ${m} 分` : `${h} 小时`;
-}
-
-/** 解析成功显示中文时长，解析失败回退上游原文 —— 文案变化不会把徽章弄空 */
+/**
+ * 直接显示上游原文（"30hrs 57mins"），与之前 shields.io 徽章上的时间格式一致。
+ * 上游改文案也只是跟着变，不会把这一行弄空。
+ */
 const codeTimeText = computed(() => {
   const ct = codeTime.value;
   if (!ct) return "";
-  return typeof ct.seconds === "number"
-    ? `${ct.label} · ${formatCodingTime(ct.seconds)}`
-    : `${ct.label} · ${ct.message}`;
+  return `${ct.label} · ${ct.message}`;
 });
 
 // 动画状态

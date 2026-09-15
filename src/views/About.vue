@@ -5,7 +5,6 @@ import avatar from "../assets/头像.jpg";
 import { getAllPosts, getAllPostsWithContent } from "../lib/posts";
 import { burstConfetti } from "../lib/confetti";
 import {
-  siOpenjdk,
   siSpringboot,
   siVuedotjs,
   siMysql,
@@ -13,11 +12,15 @@ import {
   siVite,
   siNodedotjs,
   siIntellijidea,
+  siWebstorm,
+  siPycharm,
   siGit,
   siGithub,
   siVercel,
   siGooglechrome,
   siObsidian,
+  siDeepseek,
+  siClaudecode,
   type SimpleIcon,
 } from "simple-icons";
 
@@ -33,8 +36,15 @@ function onSpoilerClick(e: MouseEvent) {
   burstConfetti(e.clientX, e.clientY);
 }
 
+/**
+ * 图标其实只用到 path 和 hex 两个字段，所以放宽成 SimpleIcon 的子集：
+ * simple-icons 里没有 OpenAI 系图标（实测 cdn.simpleicons.org/openai 是 404），
+ * Codex 那条得用别处取的 24×24 path 手写一个。
+ */
+type ToolIcon = Pick<SimpleIcon, "path" | "hex">;
+
 interface ToolItem {
-  icon: SimpleIcon;
+  icon: ToolIcon;
   name: string;
   desc: string;
   color?: string;
@@ -48,10 +58,20 @@ function iconStyle(t: ToolItem) {
   return { "--icon-color": base, "--icon-color-dark": t.colorDark || base };
 }
 
+/**
+ * Java 咖啡杯。simple-icons 已下架 Java / Oracle，只剩 siOpenjdk —— 那画的是 OpenJDK
+ * 自己的标记，不是 Java 那个咖啡杯。这里改用 MDI 的 language-java：24×24 单路径，
+ * 正好配模板里写死的 viewBox="0 0 24 24"。
+ */
+const javaMark: ToolIcon = {
+  path: "M16.5 6.08s-6.84 1.71-3.56 5.48c.97 1.11-.25 2.11-.25 2.11s2.45-1.25 1.31-2.85c-1.06-1.47-1.86-2.2 2.5-4.74m-4.47 1.2C16.08 4.08 14 2 14 2c.84 3.3-2.96 4.3-4.33 6.36c-.94 1.4.46 2.91 2.33 4.64c-.71-1.7-3.22-3.16.03-5.72M9.37 17.47c-3.08.86 1.88 2.63 5.79.96c-.38-.15-.75-.33-1.1-.54c-1.36.31-2.76.37-4.14.18c-1.31-.16-.55-.6-.55-.6m5.32-1.68c-1.75.38-3.56.47-5.34.26c-1.31-.13-.45-.77-.45-.77c-3.4 1.13 1.88 2.4 6.6 1.02c-.29-.11-.57-.3-.81-.51m3.42 3.3s.57.47-.61.83c-2.28.68-9.43.89-11.41.03c-.71-.31.63-.74 1.05-.83c.23-.06.46-.08.69-.08c-.79-.54-5.13 1.1-2.19 1.56c7.97 1.3 14.54-.6 12.47-1.51m-2.74-4.86c.29-.19.6-.35.92-.49c0 0-1.51.26-3.02.4c-1.6.16-3.21.18-4.81.06c-2.35-.31 1.29-1.2 1.29-1.2c-1.1 0-2.18.26-3.16.75c-2.05 1 5.1 1.45 8.78.48m.9 2.42c-.02.04-.04.07-.08.1c5.01-1.31 3.17-4.64.77-3.81c-.13.06-.24.14-.31.25c.14-.05.28-.09.43-.12c1.2-.24 2.92 1.63-.81 3.58m.13 4.61c-3.01.52-6.09.56-9.12.14c0 0 .46.38 2.81.53c3.6.23 9.13-.13 9.26-1.83c.03.01-.23.65-2.95 1.16",
+  hex: "5382a1",
+};
+
 const techStack: ToolItem[] = [
-  // OpenJDK 图标在 simple-icons 里是纯黑 #000000，深色模式下会看不见，所以覆盖成 Java 品牌钢蓝
-  // （同 IntelliJ IDEA 下面那条 color 覆盖的处理方式）
-  { icon: siOpenjdk, name: "Java", desc: "主力后端语言", color: "#5382a1" },
+  // 钢蓝 #5382a1 是官方 logos/java 里实测的填充色，白底 4.14:1、深底 3.84:1，两边都过 3:1，
+  // 所以不需要 colorDark
+  { icon: javaMark, name: "Java", desc: "主力后端语言", color: "#5382a1" },
   { icon: siSpringboot, name: "Spring Boot", desc: "Java 后端框架" },
   { icon: siVuedotjs, name: "Vue 3", desc: "前端框架" },
   { icon: siMysql, name: "MySQL", desc: "关系型数据库" },
@@ -60,14 +80,49 @@ const techStack: ToolItem[] = [
   { icon: siNodedotjs, name: "Node.js", desc: "JavaScript 运行时" },
 ];
 
+/**
+ * OpenAI 花标（Codex 用）。simple-icons 已把 OpenAI 系图标整体移除
+ * （实测 cdn.simpleicons.org/openai 与 /codex 都是 404），这里取
+ * @lobehub/icons-static-svg v1.95.0（MIT 许可）里同规格的 24×24 path。
+ * hex 填 000000，深色模式靠 colorDark 覆盖成本页深色正文色。
+ */
+const openaiMark: ToolIcon = {
+  path: "M9.205 8.658v-2.26c0-.19.072-.333.238-.428l4.543-2.616c.619-.357 1.356-.523 2.117-.523 2.854 0 4.662 2.212 4.662 4.566 0 .167 0 .357-.024.547l-4.71-2.759a.797.797 0 00-.856 0l-5.97 3.473zm10.609 8.8V12.06c0-.333-.143-.57-.429-.737l-5.97-3.473 1.95-1.118a.433.433 0 01.476 0l4.543 2.617c1.309.76 2.189 2.378 2.189 3.948 0 1.808-1.07 3.473-2.76 4.163zM7.802 12.703l-1.95-1.142c-.167-.095-.239-.238-.239-.428V5.899c0-2.545 1.95-4.472 4.591-4.472 1 0 1.927.333 2.712.928L8.23 5.067c-.285.166-.428.404-.428.737v6.898zM12 15.128l-2.795-1.57v-3.33L12 8.658l2.795 1.57v3.33L12 15.128zm1.796 7.23c-1 0-1.927-.332-2.712-.927l4.686-2.712c.285-.166.428-.404.428-.737v-6.898l1.974 1.142c.167.095.238.238.238.428v5.233c0 2.545-1.974 4.472-4.614 4.472zm-5.637-5.303l-4.544-2.617c-1.308-.761-2.188-2.378-2.188-3.948A4.482 4.482 0 014.21 6.327v5.423c0 .333.143.571.428.738l5.947 3.449-1.95 1.118a.432.432 0 01-.476 0zm-.262 3.9c-2.688 0-4.662-2.021-4.662-4.519 0-.19.024-.38.047-.57l4.686 2.71c.286.167.571.167.856 0l5.97-3.448v2.26c0 .19-.07.333-.237.428l-4.543 2.616c-.619.357-1.356.523-2.117.523zm5.899 2.83a5.947 5.947 0 005.827-4.756C22.287 18.339 24 15.84 24 13.296c0-1.665-.713-3.282-1.998-4.448.119-.5.19-.999.19-1.498 0-3.401-2.759-5.947-5.946-5.947-.642 0-1.26.095-1.88.31A5.962 5.962 0 0010.205 0a5.947 5.947 0 00-5.827 4.757C1.713 5.447 0 7.945 0 10.49c0 1.666.713 3.283 1.998 4.448-.119.5-.19 1-.19 1.499 0 3.401 2.759 5.946 5.946 5.946.642 0 1.26-.095 1.88-.309a5.96 5.96 0 004.162 1.713z",
+  hex: "000000",
+};
+
+/**
+ * Kaku 的 mark 是「深色圆盘 + 绿色 > + 白色 _」。本站每个格子只能填单色，
+ * 所以取它的 >_ 主体自己画了一个 24×24 路径
+ * （形状已用 ImageMagick 光栅化回点阵和官方 mark 比对过）。
+ */
+const kakuMark: ToolIcon = {
+  path: "M9.6 7.2 L14.4 12 L9.6 16.8 L8.2 15.4 L11.6 12 L8.2 8.6 Z M14.4 15.4 H20 V17.2 H14.4 Z",
+  hex: "4be765",
+};
+
 const tools: ToolItem[] = [
+  // JetBrains 三件套按用户要求排在最前（IDEA 之后）。品牌色取自官方 logo SVG：
+  // WebStorm 的 #007dfe 白底 3.91:1、深底 4.06:1 两边都过；PyCharm 官方绿 #00d886
+  // 白底只有 1.88:1，浅色改用同色相压暗的 #00aa6a（3.02:1），深色才用官方绿。
   { icon: siIntellijidea, name: "IntelliJ IDEA", desc: "主力 IDE", color: "#fe2d5b" },
+  { icon: siWebstorm, name: "WebStorm", desc: "前端 IDE", color: "#007dfe" },
+  { icon: siPycharm, name: "PyCharm", desc: "Python IDE", color: "#00aa6a", colorDark: "#00d886" },
+  // Kaku 官方绿 #4be765 白底仅 1.63:1，同样浅色压暗成 #17ab2f（3.04:1），深色用官方绿（9.77:1）
+  { icon: kakuMark, name: "Kaku", desc: "AI 编码终端", color: "#17ab2f", colorDark: "#4be765" },
   { icon: siGit, name: "Git", desc: "版本管理" },
   // 这两个品牌色是纯黑，深色下换成本页深色正文色（--text 的 #e0e0e0），不另造新色
   { icon: siGithub, name: "GitHub", desc: "代码托管 · 本站仓库", colorDark: "#e0e0e0" },
   { icon: siVercel, name: "Vercel", desc: "本站部署", colorDark: "#e0e0e0" },
   { icon: siGooglechrome, name: "Chrome", desc: "调试 & 检索" },
   { icon: siObsidian, name: "Obsidian", desc: "知识库 · 本站内容源" },
+  // 三个 AI 编程代理。注意 simple-icons 里 siOpenai / siChatgpt / siCodex 都不存在，
+  // 所以 Codex 用的是下面手写的 OpenAI 花标；另两个有同名图标，直接用。
+  // DeepSeek 的 #5786FE（浅 3.36:1 / 深 4.72:1）和 Claude Code 的 #D97757（3.12:1 / 5.09:1）
+  // 都过了图标 3:1 的非文本对比标准，不需要 color 覆盖。
+  { icon: siDeepseek, name: "DeepSeek Harness", desc: "AI 编程助手 · 本站开发" },
+  { icon: openaiMark, name: "Codex", desc: "OpenAI 的编码代理", colorDark: "#e0e0e0" },
+  { icon: siClaudecode, name: "Claude Code", desc: "Anthropic 的编码代理" },
 ];
 
 const milestones = [
