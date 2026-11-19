@@ -1,4 +1,4 @@
-export function slugifySegment(name: string): string {
+function slugifySegment(name: string): string {
   return name
     .replace(/^\s*\d+(?:\s*-\s*\d+)?[.、:]\s*/, "")
     .replace(/\s+/g, " ")

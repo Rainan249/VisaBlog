@@ -246,7 +246,7 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 .gallery-header p {
-  color: #666;
+  color: var(--text-secondary);
   margin: 8px 0 0;
   font-size: 1.05rem;
 }
@@ -263,42 +263,20 @@ function handleKeydown(e: KeyboardEvent) {
   gap: 8px;
   margin-bottom: 32px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #eee;
-}
-
-.tag-btn {
-  padding: 6px 16px;
-  border-radius: 20px;
-  border: 1px solid #e0e0e0;
-  background: transparent;
-  color: #666;
-  font-size: 0.95rem;
-  cursor: none;
-  transition: all 0.2s;
-}
-
-.tag-btn:hover {
-  border-color: #002fa7;
-  color: #002fa7;
-}
-
-.tag-btn.active {
-  background: #002fa7;
-  border-color: #002fa7;
-  color: #fff;
+  border-bottom: 1px solid var(--border);
 }
 
 .section-title {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #262628;
+  color: var(--text);
   margin: 0 0 20px;
 }
 
 .sub-section-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #444;
+  color: var(--text-secondary);
   margin: 24px 0 12px;
 }
 
@@ -312,7 +290,7 @@ function handleKeydown(e: KeyboardEvent) {
   aspect-ratio: 1;
   border-radius: 12px;
   overflow: hidden;
-  background: #f5f7fa;
+  background: var(--bg-secondary);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -326,12 +304,6 @@ function handleKeydown(e: KeyboardEvent) {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.empty-state {
-  text-align: center;
-  color: #999;
-  padding: 80px 0;
 }
 
 /* 预览模态框 */
@@ -450,13 +422,13 @@ function handleKeydown(e: KeyboardEvent) {
   height: 50px;
   border-radius: 50%;
   border: none;
-  background: #002fa7;
-  color: #fff;
+  background: var(--accent);
+  color: var(--bg);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0, 47, 167, 0.35);
+  box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.35);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   z-index: 1000;
   padding: 0;
@@ -465,7 +437,7 @@ function handleKeydown(e: KeyboardEvent) {
 
 .toc-fab:hover {
   transform: scale(1.08);
-  box-shadow: 0 6px 20px rgba(0, 47, 167, 0.45);
+  box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.45);
 }
 
 /* 透明遮罩层 */
@@ -480,7 +452,8 @@ function handleKeydown(e: KeyboardEvent) {
   position: fixed;
   bottom: 96px;
   right: 32px;
-  background: #fff;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
@@ -492,20 +465,20 @@ function handleKeydown(e: KeyboardEvent) {
   padding: 10px 16px;
   border-radius: 8px;
   font-size: 0.92rem;
-  color: #444;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   white-space: nowrap;
 }
 
 .toc-item:hover {
-  background: #f0f4ff;
-  color: #002fa7;
+  background: rgba(var(--accent-rgb), 0.08);
+  color: var(--accent);
 }
 
 .toc-item.active {
-  background: #e8f0fe;
-  color: #002fa7;
+  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--accent);
   font-weight: 600;
 }
 
@@ -516,11 +489,11 @@ function handleKeydown(e: KeyboardEvent) {
 .toc-item-l2 {
   padding-left: 28px;
   font-size: 0.85rem;
-  color: #777;
+  color: var(--text-tertiary);
 }
 
 .toc-item-l2:hover {
-  color: #002fa7;
+  color: var(--accent);
 }
 
 /* 面板展开过渡 */

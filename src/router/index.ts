@@ -1,22 +1,17 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Home from "../views/Home.vue";
-import Blog from "../views/Blog.vue";
-import Post from "../views/Post.vue";
-import About from "../views/About.vue";
-import Gallery from "../views/Gallery.vue";
-import Tag from "../views/Tag.vue";
-import NotFound from "../views/NotFound.vue";
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: "/", name: "home", component: Home },
-    { path: "/blog", name: "blog", component: Blog },
-    { path: "/blog/:slug(.*)", name: "post", component: Post },
-    { path: "/gallery", name: "gallery", component: Gallery },
-    { path: "/tags/:tag", name: "tag", component: Tag },
-    { path: "/about", name: "about", component: About },
-    { path: "/:pathMatch(.*)*", name: "not-found", component: NotFound },
+    { path: "/", name: "home", component: () => import("../views/Home.vue") },
+    { path: "/blog", name: "blog", component: () => import("../views/Blog.vue") },
+    { path: "/blog/:slug(.*)", name: "post", component: () => import("../views/Post.vue") },
+    { path: "/gallery", name: "gallery", component: () => import("../views/Gallery.vue") },
+    { path: "/tags/:tag", name: "tag", component: () => import("../views/Tag.vue") },
+    { path: "/about", name: "about", component: () => import("../views/About.vue") },
+    { path: "/feedback", name: "feedback", component: () => import("../views/Feedback.vue") },
+    { path: "/admin", name: "admin", component: () => import("../views/Admin.vue") },
+    { path: "/:pathMatch(.*)*", name: "not-found", component: () => import("../views/NotFound.vue") },
   ],
   scrollBehavior() {
     return { top: 0 };

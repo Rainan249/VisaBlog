@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from "vue";
 
-if (matchMedia('(pointer: coarse)').matches) {
-  // touch device — no trail
-} else {
+// 触屏设备不画拖尾
+if (!matchMedia("(pointer: coarse)").matches) {
   const MAX_POINTS = 30;
   const points: { x: number; y: number; t: number }[] = [];
   let canvas: HTMLCanvasElement | null = null;
   let ctx: CanvasRenderingContext2D | null = null;
-  let mouseX = -100;
-  let mouseY = -100;
   let rafId = 0;
   let lastAdd = 0;
 
@@ -22,12 +19,9 @@ if (matchMedia('(pointer: coarse)').matches) {
     ctx = canvas.getContext("2d");
   }
 
-  function isRevealActive() {
-    return document.body.classList.contains("reveal-active");
-  }
-
   function addPoint(x: number, y: number) {
-    if (isRevealActive()) {
+    // hero 的深色圈层展开时不要拖尾
+    if (document.body.classList.contains("reveal-active")) {
       points.length = 0;
       return;
     }
@@ -54,15 +48,12 @@ if (matchMedia('(pointer: coarse)').matches) {
 
       const ease = Math.cos((age * Math.PI) / 2);
       if (ease < 0.01) continue;
-      const alpha = 0.5 * ease;
-      const width = 14 * ease;
-      const hue = (i / points.length) * 300;
 
       ctx.beginPath();
       ctx.moveTo(p0.x, p0.y);
       ctx.lineTo(p1.x, p1.y);
-      ctx.strokeStyle = `hsla(${hue}, 80%, 55%, ${alpha})`;
-      ctx.lineWidth = width;
+      ctx.strokeStyle = `hsla(${(i / points.length) * 300}, 80%, 55%, ${0.5 * ease})`;
+      ctx.lineWidth = 14 * ease;
       ctx.lineCap = "round";
       ctx.stroke();
     }
@@ -71,9 +62,7 @@ if (matchMedia('(pointer: coarse)').matches) {
   }
 
   function onMouseMove(e: MouseEvent) {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-    addPoint(mouseX, mouseY);
+    addPoint(e.clientX, e.clientY);
   }
 
   function onResize() {
@@ -99,6 +88,4 @@ if (matchMedia('(pointer: coarse)').matches) {
 }
 </script>
 
-<template>
-  <!-- Canvas cursor trail -->
-</template>
+<template></template>

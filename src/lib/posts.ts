@@ -1,100 +1,50 @@
-import matter from "gray-matter";
-import createTimes from "virtual:md-create-times";
-import { buildPostSlug } from "./slug";
+import postMeta from "virtual:post-meta";
 
 export interface PostMeta {
   slug: string;
   title: string;
   date: string;
   tags: string[];
+  /** 源文件的根相对路径，用于按需加载正文 */
+  file: string;
 }
 
 export interface Post extends PostMeta {
   content: string;
 }
 
-// 在构建时导入所有 .md 文件内容（含子目录，排除 obsidian 配置）
-const modules = import.meta.glob("/posts/**/*.md", {
-  eager: true,
-  query: "?raw",
-  import: "default",
-});
+/** 元数据在构建期由 vite 插件解析好（见 vite.config.ts 的 virtual-post-meta） */
+const allPosts = postMeta as PostMeta[];
 
-function getAllPostsRaw(): Post[] {
-  const posts: Post[] = [];
-  const usedSlugs = new Map<string, number>();
-
-  for (const filepath of Object.keys(modules)) {
-    // 跳过 .obsidian 目录
-    if (filepath.includes("/.obsidian/")) continue;
-
-    // 原始相对路径（用于查找文件创建时间）
-    const rel = filepath.replace(/^\/posts\//, "").replace(/\.md$/, "");
-
-    const raw = modules[filepath] as string;
-    const { data, content } = matter(raw);
-
-    // 兼容 "tags: xxx" 这种非数组写法
-    const rawTags = (data as { tags?: unknown }).tags;
-    const tags: string[] = Array.isArray(rawTags)
-      ? rawTags.map(String)
-      : rawTags
-        ? [String(rawTags)]
-        : [];
-
-    // 友好 URL：分类取 frontmatter 的 tags[0]（没写 tags 就不加分类前缀）
-    let slug = buildPostSlug(rel, tags);
-
-    // 处理重名：追加 -2、-3…
-    const seen = usedSlugs.get(slug);
-    if (seen) {
-      usedSlugs.set(slug, seen + 1);
-      slug = `${slug}-${seen + 1}`;
-    } else {
-      usedSlugs.set(slug, 1);
-    }
-
-    posts.push({
-      slug,
-      title: data.title || slug.split("/").pop() || slug,
-      date: data.date
-        ? data.date instanceof Date
-          ? data.date.toISOString().split("T")[0]
-          : String(data.date)
-        : createTimes[rel] || new Date().toISOString().split("T")[0],
-      tags,
-      content,
-    });
-  }
-
-  return posts.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-}
-
-let allPosts: Post[] | null = null;
-
-function ensurePosts(): Post[] {
-  if (!allPosts) {
-    allPosts = getAllPostsRaw();
-  }
+export function getAllPosts(): PostMeta[] {
   return allPosts;
 }
 
-export function getAllPosts(): PostMeta[] {
-  return ensurePosts().map(({ content: _, ...meta }) => meta);
+export function getPostBySlug(slug: string): PostMeta | null {
+  return allPosts.find((p) => p.slug === slug) ?? null;
 }
 
-export function getAllPostsWithContent(): Post[] {
-  return ensurePosts();
+/**
+ * 正文按需加载：`import.meta.glob` 不 eager，每篇 Markdown 各自成 chunk。
+ * 首页 / 归档页只需要元数据，不用再把全部正文拖下来。
+ */
+const contentLoaders = import.meta.glob("/posts/**/*.md", {
+  query: "?raw",
+  import: "default",
+}) as Record<string, () => Promise<string>>;
+
+const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---[ \t]*\r?\n?/;
+
+export async function loadPostContent(post: PostMeta): Promise<string> {
+  const loader = contentLoaders[post.file];
+  if (!loader) return "";
+  return (await loader()).replace(FRONTMATTER_RE, "");
 }
 
-export function getPostBySlug(slug: string): Post | null {
-  return ensurePosts().find((p) => p.slug === slug) ?? null;
-}
-
-export function getAllSlugs(): string[] {
-  return ensurePosts().map((p) => p.slug);
+export async function getAllPostsWithContent(): Promise<Post[]> {
+  return Promise.all(
+    allPosts.map(async (meta) => ({ ...meta, content: await loadPostContent(meta) }))
+  );
 }
 
 export interface MonthGroup {

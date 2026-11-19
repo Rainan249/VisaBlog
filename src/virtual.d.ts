@@ -1,9 +1,11 @@
-declare module "virtual:md-create-times" {
-  const times: Record<string, string>;
-  export default times;
+declare module "virtual:post-meta" {
+  import type { PostMeta } from "./lib/posts";
+  const posts: PostMeta[];
+  export default posts;
 }
 
 declare module "@waline/client/style";
+
 declare module "virtual:gallery-data" {
   interface GallerySubcategory {
     name: string;
@@ -20,6 +22,8 @@ declare module "virtual:gallery-data" {
 interface ImportMetaEnv {
   readonly VITE_SITE_URL?: string;
   readonly VITE_WALINE_SERVER?: string;
+  /** Go 后端地址；本地开发走 Vite 代理时留空 */
+  readonly VITE_API_BASE?: string;
 }
 
 interface ImportMeta {

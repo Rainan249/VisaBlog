@@ -10,8 +10,8 @@ const route = useRoute();
 
 <template>
   <TopProgress />
-  <CustomCursor />
-  <ClickRipple />
-  <NavBar v-if="route.name !== 'post'" />
+  <CustomCursor v-if="route.name !== 'admin'" />
+  <ClickRipple v-if="route.name !== 'admin'" />
+  <NavBar v-if="route.name !== 'post' && route.name !== 'admin'" />
   <router-view />
 </template>

@@ -1,18 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
-import {
-  getAllPosts,
-  getAllPostsWithContent,
-  groupByYearMonth,
-} from "../lib/posts";
+import type Fuse from "fuse.js";
+import { getAllPosts, getAllPostsWithContent, groupByYearMonth } from "../lib/posts";
 import type { PostMeta } from "../lib/posts";
+import { stripMarkdown } from "../lib/text";
 import CursorTrail from "../components/CursorTrail.vue";
+import PostTimeline from "../components/PostTimeline.vue";
 
 onMounted(() => {
   document.title = "BLOG · Rainan's ink";
 });
 
-const allPosts = getAllPosts() as PostMeta[];
+const allPosts = getAllPosts();
 const activeTag = ref("");
 const searchQuery = ref("");
 
@@ -24,33 +23,32 @@ const tags = computed(() => {
 
 /* ===== 全文搜索（fuse.js 懒加载） ===== */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let fuse: any = null;
-let fuseLoading = false;
-const searchResults = ref<PostMeta[] | null>(null);
-
-function stripMarkdown(content: string): string {
-  return content
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/!?\[[^\]]*\]\([^)]*\)/g, " ")
-    .replace(/[#>*`|~]+/g, " ")
-    .replace(/\s+/g, " ");
+interface SearchDoc {
+  slug: string;
+  title: string;
+  tags: string[];
+  plain: string;
 }
 
-async function runSearch(q: string) {
-  const query = q.trim();
-  if (!query) {
-    searchResults.value = null;
-    return;
-  }
+let fuse: Fuse<SearchDoc> | null = null;
+let fusePromise: Promise<void> | null = null;
+const searchResults = ref<PostMeta[] | null>(null);
+/** slug → 正文纯文本，搜索时才加载一次（非响应式，模板用不到） */
+let plainContent: Record<string, string> = {};
 
-  if (!fuse && !fuseLoading) {
-    fuseLoading = true;
-    const { default: Fuse } = await import("fuse.js");
-    fuse = new Fuse(
-      getAllPostsWithContent().map((p) => ({
-        ...p,
-        plain: stripMarkdown(p.content),
+function ensureFuse(): Promise<void> {
+  fusePromise ??= (async () => {
+    const posts = await getAllPostsWithContent();
+    plainContent = Object.fromEntries(
+      posts.map((p) => [p.slug, stripMarkdown(p.content)])
+    );
+    const { default: FuseClass } = await import("fuse.js");
+    fuse = new FuseClass(
+      posts.map((p) => ({
+        slug: p.slug,
+        title: p.title,
+        tags: p.tags,
+        plain: plainContent[p.slug],
       })),
       {
         keys: [
@@ -60,18 +58,24 @@ async function runSearch(q: string) {
         ],
         threshold: 0.35,
         ignoreLocation: true,
-        includeMatches: true,
         minMatchCharLength: 2,
       }
     );
-    fuseLoading = false;
-  }
-  while (fuseLoading) await new Promise((r) => setTimeout(r, 50));
+  })();
+  return fusePromise;
+}
 
-  searchResults.value = fuse.search(query).map(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (r: any) => r.item as PostMeta
-  );
+async function runSearch(q: string) {
+  const query = q.trim();
+  if (!query) {
+    searchResults.value = null;
+    return;
+  }
+  await ensureFuse();
+  const bySlug = new Map(getAllPosts().map((p) => [p.slug, p]));
+  searchResults.value = (fuse?.search(query) ?? [])
+    .map((r) => bySlug.get(r.item.slug))
+    .filter((p): p is PostMeta => Boolean(p));
 }
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -86,11 +90,8 @@ const snippets = computed(() => {
   const map: Record<string, string> = {};
   if (!q || !searchResults.value) return map;
 
-  const withContent = getAllPostsWithContent();
   for (const p of searchResults.value) {
-    const plain = stripMarkdown(
-      withContent.find((x) => x.slug === p.slug)?.content ?? ""
-    );
+    const plain = plainContent[p.slug] ?? "";
     const i = plain.toLowerCase().indexOf(q.toLowerCase());
     map[p.slug] =
       i >= 0
@@ -115,11 +116,10 @@ const groupedPosts = computed(() => groupByYearMonth(filteredPosts.value));
 const stats = computed(() => {
   const tagSet = new Set<string>();
   allPosts.forEach((p) => p.tags.forEach((t) => tagSet.add(t)));
-  const years = groupByYearMonth(allPosts);
   return {
     total: allPosts.length,
     tagCount: tagSet.size,
-    yearCount: years.length,
+    yearCount: groupByYearMonth(allPosts).length,
   };
 });
 
@@ -135,14 +135,13 @@ function selectTag(tag: string) {
       <div class="blog-header-top">
         <h1>BLOG</h1>
         <div class="search-wrapper">
-          <button class="search-toggle">
+          <button class="search-toggle" aria-label="搜索">
             <svg class="search-glass" viewBox="0 0 24 24" fill="none">
               <circle cx="10.5" cy="10.5" r="7" stroke="currentColor" stroke-width="2.2" />
               <line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
             </svg>
           </button>
           <input
-            ref="searchInputRef"
             v-model="searchQuery"
             type="text"
             placeholder="搜索文章..."
@@ -159,13 +158,8 @@ function selectTag(tag: string) {
       <span class="stat"><b>{{ stats.yearCount }}</b> 年跨度</span>
     </div>
 
-    <!-- 标签筛选 -->
     <div class="tag-bar" v-if="tags.length > 0">
-      <button
-        class="tag-btn"
-        :class="{ active: activeTag === '' }"
-        @click="activeTag = ''"
-      >全部</button>
+      <button class="tag-btn" :class="{ active: activeTag === '' }" @click="activeTag = ''">全部</button>
       <button
         v-for="tag in tags"
         :key="tag"
@@ -175,36 +169,7 @@ function selectTag(tag: string) {
       >{{ tag }}</button>
     </div>
 
-    <div class="timeline">
-      <template v-for="group in groupedPosts" :key="group.year">
-        <!-- 年份 -->
-        <h2 class="year-header">{{ group.year }}</h2>
-
-        <template v-for="month in group.months" :key="month.key">
-          <!-- 月份 -->
-          <h3 class="month-header">{{ month.label }}</h3>
-          <ul class="timeline-list">
-            <li
-              v-for="post in month.posts"
-              :key="post.slug"
-              class="timeline-item"
-              :class="{ 'has-snippet': snippets[post.slug] }"
-            >
-              <div class="timeline-row">
-                <span class="item-day">{{ Number(post.date.slice(8)) }}</span>
-                <RouterLink :to="`/blog/${post.slug}`" target="_blank" class="item-title">{{ post.title }}</RouterLink>
-                <span v-for="tag in post.tags" :key="tag" class="item-tag">
-                  <RouterLink :to="`/tags/${encodeURIComponent(tag)}`" class="item-tag-link">{{ tag }}</RouterLink>
-                </span>
-              </div>
-              <p v-if="snippets[post.slug]" class="item-snippet">{{ snippets[post.slug] }}</p>
-            </li>
-          </ul>
-        </template>
-      </template>
-
-      <p v-if="filteredPosts.length === 0" class="empty">没有找到相关文章</p>
-    </div>
+    <PostTimeline :groups="groupedPosts" :snippets="snippets" show-tags />
   </div>
 </template>
 
@@ -267,28 +232,6 @@ function selectTag(tag: string) {
   margin-bottom: 32px;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--border);
-}
-
-.tag-btn {
-  padding: 6px 16px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 0.95rem;
-  cursor: none;
-  transition: all 0.2s;
-}
-
-.tag-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.tag-btn.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--bg);
 }
 
 /* ===== 搜索框 ===== */
@@ -374,127 +317,6 @@ function selectTag(tag: string) {
 }
 
 .search-input::placeholder {
-  color: #aaa;
-}
-
-/* ===== 时间轴 ===== */
-
-.timeline {
-  margin-top: 8px;
-}
-
-/* ===== 年份 ===== */
-
-.year-header {
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--text);
-  margin: 32px 0 4px;
-  letter-spacing: -0.02em;
-}
-
-/* ===== 月份 ===== */
-
-.month-header {
-  position: relative;
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin: 16px 0 6px;
-  padding-left: 12px;
-}
-
-.month-header::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 3px;
-  bottom: 3px;
-  width: 2.5px;
-  border-radius: 2px;
-  background: var(--accent);
-}
-
-/* ===== 文章列表 ===== */
-
-.timeline-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.timeline-item {
-  padding: 5px 0;
-  line-height: 1.5;
-}
-
-.timeline-item.has-snippet {
-  padding: 10px 0;
-}
-
-.timeline-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.item-snippet {
-  margin: 4px 0 0 34px;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  line-height: 1.6;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.item-day {
-  flex-shrink: 0;
-  width: 24px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #aaa;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.item-title {
-  flex: 1;
-  min-width: 0;
-  font-size: 1.05rem;
-  color: var(--text);
-  text-decoration: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  transition: color 0.2s;
-}
-
-.item-title:hover {
-  color: var(--accent);
-  text-decoration: underline;
-}
-
-.item-tag {
-  flex-shrink: 0;
-  font-size: 0.85rem;
-  color: #999;
-}
-
-.item-tag-link {
-  color: inherit;
-  text-decoration: none;
-}
-
-.item-tag-link:hover {
-  color: var(--accent);
-  text-decoration: none;
-}
-
-.empty {
-  text-align: center;
   color: var(--text-tertiary);
-  padding: 40px 0;
 }
 </style>
