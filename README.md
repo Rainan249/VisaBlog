@@ -1,64 +1,84 @@
-# Rainan's ink
+# VisaBlog
 
-个人博客站点：Vue 3 + TypeScript + Vite，内容直接来自 Obsidian 笔记库（`posts/`）。
+个人博客：Vue 3 前端 + Go 后台服务。
 
-## 快速开始
+```
+VisaBlog/
+├─ fronted/   Vue 3 + TypeScript + Vite 站点（含 /admin 管理页）
+└─ backend/   Go 单用户后台：登录、笔记/图片分类树与上传
+```
+
+## 一键启动（推荐）
+
+Windows 下双击 `scripts/dev.cmd`，或在 PowerShell 里：
+
+```powershell
+.\scripts\dev.ps1
+```
+
+脚本会自动：
+
+1. 检查 Node.js
+2. 检测 Go，没有则下载便携版到 `.tools/`（只下一次）
+3. 首次运行时生成 `backend/.env`（随机后台密码）
+4. 编译并启动 Go 后端、启动 Vite
+5. 打开 `http://localhost:5173/admin`
+
+其他参数：
+
+```powershell
+.\scripts\dev.ps1 -NoBrowser     # 不自动开浏览器
+.\scripts\dev.ps1 -SmokeTest     # 启动→检查→自动停止（用于验证环境）
+.\scripts\dev.ps1 -GoExe "C:\Program Files\Go\bin\go.exe"   # 指定 Go
+```
+
+日志在 `.run/`，按 `Ctrl+C` 会同时停止前后端。
+
+## 手动启动
 
 ```bash
+# 终端 1：后端
+cd backend
+cp .env.example .env          # 改账号密码
+go run ./cmd/server           # http://localhost:8080
+
+# 终端 2：前端
+cd fronted
 npm install
-npm run dev        # http://localhost:5173
-npm run build      # 类型检查 + 生产构建到 dist/
-npm run preview    # 本地预览构建产物
-npm run typecheck  # 只跑 vue-tsc
+npm run dev                   # http://localhost:5173
 ```
 
-## 后台管理（/admin）
+- 站点：<http://localhost:5173/>
+- 后台：<http://localhost:5173/admin>
 
-管理页由 `src/views/Admin.vue` 提供，数据来自同仓库的 Go 后端（`../backend`）：
+Vite 会把 `/api` 与 `/uploads` 代理到 `http://127.0.0.1:8080`。
 
-- 登录：单用户，bcrypt + JWT HttpOnly Cookie
-- 笔记：分类树 + Markdown 编辑/预览，直接写入 `posts/`
-- 图片：分类树 + 多图上传，写入 `public/uploads/`
+## 当前测试模式
 
-本地开发时 Vite 已把 `/api`、`/uploads` 代理到 `http://127.0.0.1:8080`。
-若前后端分开部署，设置 `VITE_API_BASE` 指向后端地址。
+`backend/.env` 里现在设了：
 
-环境变量（复制 `.env.example` 为 `.env`）：
+```
+AUTH_DISABLED=true
+```
 
-| 变量 | 说明 |
+后台 `/admin` 直接进入、不需要登录；前台 `/feedback` 可提交意见，后台「意见」页查看。上线前把 `AUTH_DISABLED` 改回 `false`。
+
+> 修改 `backend/.env` 后必须重启后端才会生效（脚本里按 `Ctrl+C` 再重跑即可）。
+
+## 内容如何存放
+
+| 内容 | 位置 |
 | --- | --- |
-| `VITE_SITE_URL` | 线上域名。配置后构建时才会生成 `rss.xml` / `sitemap.xml` / `robots.txt` |
-| `VITE_WALINE_SERVER` | Waline 评论服务地址；不配则不显示评论区 |
-| `QQMUSIC_API_KEY` | QQ 音乐听歌报告接口密钥；不配则关于页显示「暂未取到」 |
+| 笔记 Markdown | `fronted/posts/<分类路径>/<文件名>.md` |
+| 后台上传图片 | `fronted/public/uploads/<分类路径>/` |
+| 相册图片 | `fronted/public/gallery/<大类>/<子类>/` |
 
-## 目录结构
-
-```
-src/
-├─ views/        页面：Home / Blog / Post / Gallery / Tag / About / NotFound
-├─ components/   通用组件：导航、时间轴、目录树、光标特效等
-├─ lib/          纯逻辑：文章元数据、Markdown 渲染、主题、文本工具
-├─ router/       路由（按页懒加载）
-└─ style.css     全局设计变量与 Markdown 样式
-posts/           Obsidian 笔记（Markdown + 附件）
-public/gallery/  相册图片，构建时自动扫描
-api/             Vercel Serverless 函数：QQ 音乐 / CodeTime 代理
-```
-
-## 内容约定
-
-- `posts/` 下任意层级的 `.md` 都会被收录，`.obsidian/` 自动忽略。
-- frontmatter 支持 `title`、`date`、`tags`；`tags[0]` 同时作为文章 URL 的分类前缀。
-- 文件名里的 `001-030.`、`1.` 这类编号会自动从 URL 中去除。
-- 图片用 Obsidian 的 `![[xxx.png]]` 写法即可，构建时会映射到 `/images/`。
-
-## 实现要点
-
-- **文章元数据在构建期解析**（`vite.config.ts` 的 `virtual:post-meta`），正文按需分块加载，首页不会下载全部笔记。
-- **路由级代码分割**：每个页面单独打包。
-- **Markdown**：`marked` + 自定义渲染器，支持 Obsidian Callout、GitHub 仓库卡片、代码块复制、链接预览、KaTeX。
-- **代码高亮**：`highlight.js` 只注册文章里实际用到的语言（见 `src/lib/highlight.ts`）。
+分类层级就是目录层级，后台里可以直接新建/重命名/删除分类。
 
 ## 部署
 
-推送到 `main` 后由 Vercel 构建；`vercel.json` 已配置 `/api/*` 函数与 SPA rewrite。
+- 前端仍按原有方式部署到 Vercel（`fronted`）。
+- Go 后端需要独立运行在有持久磁盘的服务器上；把 `NOTES_DIR` / `IMAGES_DIR` 指向该服务器上的内容目录，并在前端设置 `VITE_API_BASE` 指向后端地址。
+- 后台上传后如需更新线上静态站，需要重新构建前端（这是当前静态架构的约束，后续可改成构建钩子或运行时内容 API）。
+
+详细说明见 [`fronted/README.md`](fronted/README.md) 和 [`backend/README.md`](backend/README.md)。
