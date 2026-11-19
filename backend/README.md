@@ -20,7 +20,7 @@ go run ./cmd/server       # 监听 :8080
 前端另开一个终端：
 
 ```bash
-cd fronted
+cd frontend
 npm run dev               # http://localhost:5173/admin
 ```
 
@@ -30,8 +30,8 @@ Vite 已把 `/api` 代理到 `http://localhost:8080`。
 
 | 内容 | 默认目录 | 说明 |
 | --- | --- | --- |
-| 笔记 | `../fronted/posts/<分类路径>/<slug>.md` | 直接进入站点内容目录，构建时自动收录 |
-| 图片 | `../fronted/public/uploads/<分类路径>/` | 开发时由 Vite 直接服务，构建时复制到 `dist/uploads` |
+| 笔记 | `../frontend/posts/<分类路径>/<slug>.md` | 直接进入站点内容目录，构建时自动收录 |
+| 图片 | `../frontend/public/uploads/<分类路径>/` | 开发时由 Vite 直接服务，构建时复制到 `dist/uploads` |
 
 分类就是目录层级，任意深度。
 

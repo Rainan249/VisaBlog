@@ -4,7 +4,7 @@
 
 ```
 VisaBlog/
-├─ fronted/   Vue 3 + TypeScript + Vite 站点（含 /admin 管理页）
+├─ frontend/   Vue 3 + TypeScript + Vite 站点（含 /admin 管理页）
 └─ backend/   Go 单用户后台：登录、笔记/图片分类树与上传
 ```
 
@@ -43,7 +43,7 @@ cp .env.example .env          # 改账号密码
 go run ./cmd/server           # http://localhost:8080
 
 # 终端 2：前端
-cd fronted
+cd frontend
 npm install
 npm run dev                   # http://localhost:5173
 ```
@@ -69,16 +69,16 @@ AUTH_DISABLED=true
 
 | 内容 | 位置 |
 | --- | --- |
-| 笔记 Markdown | `fronted/posts/<分类路径>/<文件名>.md` |
-| 后台上传图片 | `fronted/public/uploads/<分类路径>/` |
-| 相册图片 | `fronted/public/gallery/<大类>/<子类>/` |
+| 笔记 Markdown | `frontend/posts/<分类路径>/<文件名>.md` |
+| 后台上传图片 | `frontend/public/uploads/<分类路径>/` |
+| 相册图片 | `frontend/public/gallery/<大类>/<子类>/` |
 
 分类层级就是目录层级，后台里可以直接新建/重命名/删除分类。
 
 ## 部署
 
-- 前端仍按原有方式部署到 Vercel（`fronted`）。
+- 前端仍按原有方式部署到 Vercel（`frontend`）。
 - Go 后端需要独立运行在有持久磁盘的服务器上；把 `NOTES_DIR` / `IMAGES_DIR` 指向该服务器上的内容目录，并在前端设置 `VITE_API_BASE` 指向后端地址。
 - 后台上传后如需更新线上静态站，需要重新构建前端（这是当前静态架构的约束，后续可改成构建钩子或运行时内容 API）。
 
-详细说明见 [`fronted/README.md`](fronted/README.md) 和 [`backend/README.md`](backend/README.md)。
+详细说明见 [`frontend/README.md`](frontend/README.md) 和 [`backend/README.md`](backend/README.md)。

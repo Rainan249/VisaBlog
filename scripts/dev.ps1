@@ -11,7 +11,7 @@ $ProgressPreference = "SilentlyContinue"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Root = Split-Path -Parent $ScriptDir
 $BackendDir = Join-Path $Root "backend"
-$FrontendDir = Join-Path $Root "fronted"
+$FrontendDir = Join-Path $Root "frontend"
 $RunDir = Join-Path $Root ".run"
 $ToolsDir = Join-Path $Root ".tools"
 
